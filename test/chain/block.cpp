@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(block__from_data__insufficient_bytes__failure)
 
 BOOST_AUTO_TEST_CASE(block__from_data__insufficient_transaction_bytes__failure)
 {
-    const data_chunk data = to_chunk(base16_literal(
+    const auto data = to_chunk(base16_literal(
         "010000007f110631052deeee06f0754a3629ad7663e56359fd5f3aa7b3e30a00"
         "000000005f55996827d9712147a8eb6d7bae44175fe0bcfa967e424a25bfe9f4"
         "dc118244d67fb74c9d8e2f1bea5ee82a03010000000100000000000000000000"
@@ -274,28 +274,33 @@ BOOST_AUTO_TEST_CASE(block__from_data__insufficient_transaction_bytes__failure)
 
 BOOST_AUTO_TEST_CASE(block__genesis__mainnet__valid_structure)
 {
+    const auto genesis_hash = hash_literal("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
     const auto genesis = bc::chain::block::genesis_mainnet();
     BOOST_REQUIRE(genesis.is_valid());
     BOOST_REQUIRE_EQUAL(genesis.transactions().size(), 1u);
     BOOST_REQUIRE(genesis.header().merkle() == genesis.generate_merkle_root());
+    BOOST_REQUIRE(genesis.hash() == genesis_hash);
 }
 
 BOOST_AUTO_TEST_CASE(block__genesis__testnet__valid_structure)
 {
+    const auto genesis_hash = hash_literal("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943");
     const auto genesis = bc::chain::block::genesis_testnet();
     BOOST_REQUIRE(genesis.is_valid());
     BOOST_REQUIRE_EQUAL(genesis.transactions().size(), 1u);
     BOOST_REQUIRE(genesis.header().merkle() == genesis.generate_merkle_root());
+    BOOST_REQUIRE(genesis.hash() == genesis_hash);
 }
 
 BOOST_AUTO_TEST_CASE(block__genesis__regtest__valid_structure)
 {
+    const auto genesis_hash = hash_literal("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206");
     const auto genesis = bc::chain::block::genesis_regtest();
     BOOST_REQUIRE(genesis.is_valid());
     BOOST_REQUIRE_EQUAL(genesis.transactions().size(), 1u);
     BOOST_REQUIRE(genesis.header().merkle() == genesis.generate_merkle_root());
+    BOOST_REQUIRE(genesis.hash() == genesis_hash);
 }
-
 
 BOOST_AUTO_TEST_CASE(block__factory_from_data_1__genesis_mainnet__success)
 {
@@ -715,6 +720,74 @@ BOOST_AUTO_TEST_CASE(block__is_forward_reference__forward_reference__true)
     chain::transaction before{ 1, 0, { { { after.hash(), 0 }, {}, 0 } }, {} };
     value.set_transactions({ before, after });
     BOOST_REQUIRE(value.is_forward_reference());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(is_internal_double_spend_block_tests)
+
+#define HASH_TX1 \
+"bf7c3f5a69a78edd81f3eff7e93a37fb2d7da394d48db4d85e7e5353b9b8e270"
+
+const auto hash_tx1 = hash_literal(HASH_TX1);
+
+#define HASH_TX2 \
+"8a6d9302fbe24f0ec756a94ecfc837eaffe16c43d1e68c62dfe980d99eea556f"
+
+const auto hash_tx2 = hash_literal(HASH_TX2);
+
+#define HASH_TX3 \
+"cb1e303db604f066225eb14d59d3f8d2231200817bc9d4610d2802586bd93f8a"
+
+const auto hash_tx3 = hash_literal(HASH_TX3);
+
+BOOST_AUTO_TEST_CASE(block__is_internal_double_spend__empty_transactions__false)
+{
+    chain::block instance;
+    BOOST_REQUIRE_EQUAL(instance.is_internal_double_spend(), false);
+}
+
+BOOST_AUTO_TEST_CASE(block__is_internal_double_spend__unique_prevouts__false)
+{
+    chain::block instance;
+    chain::transaction coinbase;
+    instance.transactions().emplace_back(coinbase);
+    chain::transaction tx1;
+    tx1.inputs().emplace_back(chain::output_point{ hash_tx1, 42 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx1);
+    chain::transaction tx2;
+    tx2.inputs().emplace_back(chain::output_point{ hash_tx2, 27 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx2);
+    chain::transaction tx3;
+    tx3.inputs().emplace_back(chain::output_point{ hash_tx3, 36 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx3);
+    BOOST_REQUIRE_EQUAL(instance.is_internal_double_spend(), false);
+}
+
+BOOST_AUTO_TEST_CASE(block__is_internal_double_spend__nonunique_prevouts__true)
+{
+    chain::block instance;
+    chain::transaction coinbase;
+    instance.transactions().emplace_back(coinbase);
+    chain::transaction tx1;
+    tx1.inputs().emplace_back(chain::output_point{ hash_tx1, 42 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx1);
+    chain::transaction tx2;
+    tx2.inputs().emplace_back(chain::output_point{ hash_tx2, 27 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx2);
+    chain::transaction tx3;
+    tx3.inputs().emplace_back(chain::output_point{ hash_tx3, 36 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx3);
+    chain::transaction tx4;
+    tx4.inputs().emplace_back(chain::output_point{ hash_tx1, 42 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx4);
+    chain::transaction tx5;
+    tx5.inputs().emplace_back(chain::output_point{ hash_tx2, 27 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx5);
+    chain::transaction tx6;
+    tx6.inputs().emplace_back(chain::output_point{ hash_tx3, 36 }, chain::script{}, 0);
+    instance.transactions().emplace_back(tx6);
+    BOOST_REQUIRE_EQUAL(instance.is_internal_double_spend(), true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
