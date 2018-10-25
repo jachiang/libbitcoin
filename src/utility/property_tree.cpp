@@ -20,9 +20,12 @@
 #include <bitcoin/bitcoin/utility/property_tree.hpp>
 
 #include <cstdint>
+#include <exception>
 #include <string>
 #include <vector>
+#include <boost/iostreams/stream.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <bitcoin/bitcoin/define.hpp>
 #include <bitcoin/bitcoin/config/base16.hpp>
 #include <bitcoin/bitcoin/config/header.hpp>
@@ -41,6 +44,7 @@ using namespace pt;
 using namespace bc::config;
 using namespace bc::machine;
 using namespace bc::wallet;
+using namespace boost::iostreams;
 
 // property_tree is very odd in that what one might consider a node or element,
 // having a "containing" name cannot be added into another node without
@@ -79,6 +83,23 @@ ptree property_tree(const std::vector<config::header>& headers, bool json)
 {
     ptree tree;
     tree.add_child("headers", property_tree_list("header", headers, json));
+    return tree;
+}
+
+// block
+
+ptree property_list(const chain::block& block, bool json)
+{
+    ptree tree = property_list(block.header());
+    tree.add_child("transactions", property_tree_list_of_lists("transaction",
+        block.transactions(), json));
+    return tree;
+}
+
+ptree property_tree(const chain::block& block, bool json)
+{
+    ptree tree;
+    tree.add_child("block", property_list(block, json));
     return tree;
 }
 
@@ -287,6 +308,44 @@ ptree property_tree(const settings_list& settings)
     ptree tree;
     tree.add_child("settings", list);
     return tree;
+}
+
+// sequence
+
+ptree property_tree(uint64_t height, uint32_t sequence)
+{
+    ptree tree;
+    tree.put("height", height);
+    tree.put("sequence", sequence);
+    return tree;
+}
+
+// error
+
+ptree property_tree(const std::error_code& code, uint32_t sequence)
+{
+    ptree tree;
+    tree.put("sequence", sequence);
+    tree.put("type", "error");
+    tree.put("message", code.message());
+    tree.put("code", code.value());
+    return tree;
+}
+
+// safe json input parsing
+
+bool property_tree(ptree& out, const std::string& json)
+{
+    try
+    {
+        stream<array_source> json_stream(json.c_str(), json.size());
+        read_json(json_stream, out);
+        return true;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
 }
 
 } // namespace libbitcoin
