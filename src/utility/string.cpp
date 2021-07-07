@@ -16,13 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/utility/string.hpp>
+#include <bitcoin/system/utility/string.hpp>
 
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <bitcoin/system/utility/data.hpp>
 
 namespace libbitcoin {
+
+std::string to_string(const data_slice& source)
+{
+    std::string out(source.begin(), source.end());
+    return out;
+}
 
 std::string join(const string_list& words, const std::string& delimiter)
 {

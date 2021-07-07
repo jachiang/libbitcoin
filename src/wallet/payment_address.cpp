@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/payment_address.hpp>
+#include <bitcoin/system/wallet/payment_address.hpp>
 
 #include <algorithm>
 #include <cstdint>
@@ -24,12 +24,12 @@
 #include <string>
 #include <utility>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/formats/base_58.hpp>
-#include <bitcoin/bitcoin/math/checksum.hpp>
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/wallet/ec_private.hpp>
-#include <bitcoin/bitcoin/wallet/ec_public.hpp>
+#include <bitcoin/system/formats/base_58.hpp>
+#include <bitcoin/system/math/checksum.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/wallet/ec_private.hpp>
+#include <bitcoin/system/wallet/ec_public.hpp>
 
 namespace libbitcoin {
 namespace wallet {
@@ -96,7 +96,7 @@ payment_address::payment_address(const short_hash& hash, uint8_t version)
 // Validators.
 // ----------------------------------------------------------------------------
 
-bool payment_address::is_address(data_slice decoded)
+bool payment_address::is_address(const data_slice& decoded)
 {
     return (decoded.size() == payment_size) && verify_checksum(decoded);
 }
@@ -154,7 +154,7 @@ payment_address payment_address::from_script(const chain::script& script,
 // Cast operators.
 // ----------------------------------------------------------------------------
 
-payment_address::operator const bool() const
+payment_address::operator bool() const
 {
     return valid_;
 }

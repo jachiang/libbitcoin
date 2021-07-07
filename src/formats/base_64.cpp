@@ -16,11 +16,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/formats/base_64.hpp>
+#include <bitcoin/system/formats/base_64.hpp>
 
 #include <cstdint>
 #include <string>
-#include <bitcoin/bitcoin/utility/data.hpp>
+#include <bitcoin/system/utility/data.hpp>
 
 // This implementation derived from public domain:
 // en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
@@ -32,15 +32,15 @@ const static char pad = '=';
 const static char table[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-std::string encode_base64(data_slice unencoded)
+std::string encode_base64(const data_slice& unencoded)
 {
     std::string encoded;
     const auto size = unencoded.size();
-    encoded.reserve(((size / 3) + (size % 3 > 0)) * 4);
+    encoded.reserve(((size / 3u) + (size % 3u > 0u)) * 4u);
 
     uint32_t value;
     auto cursor = unencoded.begin();
-    for (size_t position = 0; position < size / 3; position++)
+    for (size_t position = 0; position < size / 3u; position++)
     {
         // Convert to big endian.
         value = (*cursor++) << 16;

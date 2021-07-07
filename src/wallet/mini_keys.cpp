@@ -16,12 +16,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/mini_keys.hpp>
+#include <bitcoin/system/wallet/mini_keys.hpp>
 
 #include <cstdint>
 #include <string>
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
+#include <bitcoin/system/math/hash.hpp>
 
 namespace libbitcoin {
 namespace wallet {
@@ -29,7 +29,8 @@ namespace wallet {
 bool check_minikey(const std::string& minikey)
 {
     // Legacy minikeys are 22 chars long
-    bool valid = minikey.size() == 22 || minikey.size() == 30;
+    const auto size = minikey.size();
+    const auto valid = size == 22u || size == 30u;
     return valid && sha256_hash(to_chunk(minikey + "?"))[0] == 0x00;
 }
 

@@ -16,11 +16,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/math/checksum.hpp>
+#include <bitcoin/system/math/checksum.hpp>
 
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/utility/endian.hpp>
-#include <bitcoin/bitcoin/utility/deserializer.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/utility/endian.hpp>
+#include <bitcoin/system/utility/deserializer.hpp>
 
 namespace libbitcoin {
 
@@ -30,13 +30,13 @@ void append_checksum(data_chunk& data)
     extend_data(data, to_little_endian(checksum));
 }
 
-uint32_t bitcoin_checksum(data_slice data)
+uint32_t bitcoin_checksum(const data_slice& data)
 {
     const auto hash = bitcoin_hash(data);
     return from_little_endian_unsafe<uint32_t>(hash.begin());
 }
 
-bool verify_checksum(data_slice data)
+bool verify_checksum(const data_slice& data)
 {
     if (data.size() < checksum_size)
         return false;

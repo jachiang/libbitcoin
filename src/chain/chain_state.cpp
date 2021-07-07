@@ -16,24 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/chain/chain_state.hpp>
+#include <bitcoin/system/chain/chain_state.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <boost/range/adaptor/reversed.hpp>
-#include <bitcoin/bitcoin/chain/block.hpp>
-#include <bitcoin/bitcoin/chain/chain_state.hpp>
-#include <bitcoin/bitcoin/chain/compact.hpp>
-#include <bitcoin/bitcoin/chain/script.hpp>
-#include <bitcoin/bitcoin/config/checkpoint.hpp>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/machine/opcode.hpp>
-#include <bitcoin/bitcoin/machine/rule_fork.hpp>
-#include <bitcoin/bitcoin/unicode/unicode.hpp>
-#include <bitcoin/bitcoin/utility/timer.hpp>
+#include <bitcoin/system/chain/block.hpp>
+#include <bitcoin/system/chain/chain_state.hpp>
+#include <bitcoin/system/chain/compact.hpp>
+#include <bitcoin/system/chain/script.hpp>
+#include <bitcoin/system/config/checkpoint.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/machine/opcode.hpp>
+#include <bitcoin/system/machine/rule_fork.hpp>
+#include <bitcoin/system/unicode/unicode.hpp>
+#include <bitcoin/system/utility/timer.hpp>
 
 namespace libbitcoin {
 namespace chain {
@@ -358,9 +358,11 @@ size_t chain_state::bip9_bit0_height(size_t height, uint32_t forks)
 size_t chain_state::bip9_bit1_height(size_t height, uint32_t forks)
 {
     const auto testnet = script::is_enabled(forks, rule_fork::easy_blocks);
+    const auto regtest = !script::is_enabled(forks, rule_fork::retarget);
 
-    const auto activation_height = testnet ?
-        testnet_bip9_bit1_active_checkpoint.height() :
+    const auto activation_height =
+        testnet ? testnet_bip9_bit1_active_checkpoint.height() :
+        regtest ? regtest_bip9_bit1_active_checkpoint.height() :
         mainnet_bip9_bit1_active_checkpoint.height();
 
     // Require bip9_bit1 hash at heights above historical bip9_bit1 activation.
@@ -496,7 +498,7 @@ size_t chain_state::retarget_distance(size_t height)
 
 // static
 chain_state::map chain_state::get_map(size_t height,
-    const checkpoints& checkpoints, uint32_t forks)
+    const checkpoints& /* checkpoints */, uint32_t forks)
 {
     if (height == 0)
         return{};

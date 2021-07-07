@@ -16,16 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
 
 #include <algorithm>
 #include <utility>
 #include <secp256k1.h>
 #include <secp256k1_recovery.h>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/data.hpp>
 #include "../math/external/lax_der_parsing.h"
 #include "secp256k1_initializer.hpp"
 
@@ -215,7 +215,7 @@ bool verify(const ec_uncompressed& point)
 // Detect public keys
 // ----------------------------------------------------------------------------
 
-bool is_compressed_key(data_slice point)
+bool is_compressed_key(const data_slice& point)
 {
     const auto size = point.size();
     if (size != ec_compressed_size)
@@ -225,7 +225,7 @@ bool is_compressed_key(data_slice point)
     return first == compressed_even || first == compressed_odd;
 }
 
-bool is_uncompressed_key(data_slice point)
+bool is_uncompressed_key(const data_slice& point)
 {
     const auto size = point.size();
     if (size != ec_uncompressed_size)
@@ -235,7 +235,7 @@ bool is_uncompressed_key(data_slice point)
     return first == uncompressed;
 }
 
-bool is_public_key(data_slice point)
+bool is_public_key(const data_slice& point)
 {
     return is_compressed_key(point) || is_uncompressed_key(point);
 }
@@ -255,14 +255,13 @@ bool is_endorsement(const endorsement& endorsement)
 // ----------------------------------------------------------------------------
 
 bool parse_endorsement(uint8_t& sighash_type, der_signature& der_signature,
-    endorsement&& endorsement)
+    const endorsement& endorsement)
 {
     if (endorsement.empty())
         return false;
 
     sighash_type = endorsement.back();
-    endorsement.pop_back();
-    der_signature = std::move(endorsement);
+    der_signature = { endorsement.begin(), endorsement.end() - 1 };
     return true;
 }
 
@@ -341,7 +340,7 @@ bool verify_signature(const ec_uncompressed& point, const hash_digest& hash,
         verify_signature(context, pubkey, hash, signature);
 }
 
-bool verify_signature(data_slice point, const hash_digest& hash,
+bool verify_signature(const data_slice& point, const hash_digest& hash,
     const ec_signature& signature)
 {
     // Copy to avoid exposing external types.
@@ -369,7 +368,7 @@ bool verify_signature(data_slice point, const hash_digest& hash,
 bool sign_recoverable(recoverable_signature& out, const ec_secret& secret,
     const hash_digest& hash)
 {
-    int recovery_id;
+    int recovery_id = 0;
     const auto context = signing.context();
     secp256k1_ecdsa_recoverable_signature signature;
 

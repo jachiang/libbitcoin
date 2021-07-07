@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/chain/block.hpp>
+#include <bitcoin/system/chain/block.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -30,26 +30,26 @@
 #include <utility>
 #include <unordered_map>
 #include <boost/range/adaptor/reversed.hpp>
-#include <bitcoin/bitcoin/chain/chain_state.hpp>
-#include <bitcoin/bitcoin/chain/compact.hpp>
-#include <bitcoin/bitcoin/chain/input_point.hpp>
-#include <bitcoin/bitcoin/chain/script.hpp>
-#include <bitcoin/bitcoin/config/checkpoint.hpp>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/error.hpp>
-#include <bitcoin/bitcoin/formats/base_16.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/machine/number.hpp>
-#include <bitcoin/bitcoin/machine/opcode.hpp>
-#include <bitcoin/bitcoin/machine/rule_fork.hpp>
-#include <bitcoin/bitcoin/message/messages.hpp>
-#include <bitcoin/bitcoin/utility/asio.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/chain/chain_state.hpp>
+#include <bitcoin/system/chain/compact.hpp>
+#include <bitcoin/system/chain/input_point.hpp>
+#include <bitcoin/system/chain/script.hpp>
+#include <bitcoin/system/config/checkpoint.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/error.hpp>
+#include <bitcoin/system/formats/base_16.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/machine/number.hpp>
+#include <bitcoin/system/machine/opcode.hpp>
+#include <bitcoin/system/machine/rule_fork.hpp>
+#include <bitcoin/system/message/messages.hpp>
+#include <bitcoin/system/utility/asio.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
 namespace chain {
@@ -267,7 +267,7 @@ data_chunk block::to_data(bool witness) const
     const auto size = serialized_size(witness);
     data.reserve(size);
     data_sink ostream(data);
-    to_data(ostream);
+    to_data(ostream, witness);
     ostream.flush();
     BITCOIN_ASSERT(data.size() == size);
     return data;
@@ -461,14 +461,15 @@ chain::block block::genesis_regtest()
 // 64 bit chain should not exceed 75, using a limit of: 10 + log2(height) + 1.
 size_t block::locator_size(size_t top)
 {
-    // Set rounding behavior, not consensus-related, thread side effect :<.
-    std::fesetround(FE_UPWARD);
-
-    const auto first_ten_or_top = std::min(size_t(10), top);
+    const auto first_ten_or_top = std::min(size_t{10}, top);
     const auto remaining = top - first_ten_or_top;
-    const auto back_off = remaining == 0 ? 0.0 : std::log2(remaining);
-    const auto rounded_up_log = static_cast<size_t>(std::nearbyint(back_off));
-    return first_ten_or_top + rounded_up_log + size_t(1);
+
+    // Set log2(0) -> 0, log2(1) -> 1 and round up higher exponential backoff
+    // results to next whole number by adding 0.5 and truncating.
+    const auto back_off = remaining < 2 ? remaining :
+        static_cast<size_t>(std::log2(remaining) + 0.5);
+
+    return first_ten_or_top + back_off + size_t{1};
 }
 
 // This algorithm is a network best practice, not a consensus rule.
@@ -676,16 +677,16 @@ hash_digest block::generate_merkle_root(bool witness) const
     auto merkle = to_hashes(witness);
 
     // Initial capacity is half of the original list (clear doesn't reset).
-    update.reserve((merkle.size() + 1) / 2);
+    update.reserve((merkle.size() + 1u) / 2u);
 
-    while (merkle.size() > 1)
+    while (merkle.size() > 1u)
     {
         // If number of hashes is odd, duplicate last hash in the list.
-        if (merkle.size() % 2 != 0)
+        if (merkle.size() % 2u != 0u)
             merkle.push_back(merkle.back());
 
-        for (auto it = merkle.begin(); it != merkle.end(); it += 2)
-            update.push_back(bitcoin_hash(build_chunk({ it[0], it[1] })));
+        for (auto it = merkle.begin(); it != merkle.end(); it += 2u)
+            update.push_back(bitcoin_hash(splice(it[0], it[1])));
 
         std::swap(merkle, update);
         update.clear();
@@ -813,7 +814,7 @@ bool block::is_valid_witness_commitment() const
         for (const auto& output: reverse(coinbase.outputs()))
             if (output.extract_committed_hash(committed))
                 return committed == bitcoin_hash(
-                    build_chunk({ generate_merkle_root(true), reserved }));
+                    splice(generate_merkle_root(true), reserved));
 
     // If no txs in block are segregated the commitment is optional (bip141).
     return !is_segregated();

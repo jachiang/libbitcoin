@@ -16,28 +16,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/hd_private.hpp>
+#include <bitcoin/system/wallet/hd_private.hpp>
 
 #include <cstdint>
 #include <iostream>
 #include <string>
 #include <utility>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/formats/base_58.hpp>
-#include <bitcoin/bitcoin/math/checksum.hpp>
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
-#include <bitcoin/bitcoin/utility/endian.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
-#include <bitcoin/bitcoin/wallet/ec_private.hpp>
-#include <bitcoin/bitcoin/wallet/ec_public.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/formats/base_58.hpp>
+#include <bitcoin/system/math/checksum.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/data.hpp>
+#include <bitcoin/system/utility/endian.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/serializer.hpp>
+#include <bitcoin/system/wallet/ec_private.hpp>
+#include <bitcoin/system/wallet/ec_public.hpp>
 
 namespace libbitcoin {
 namespace wallet {
@@ -109,7 +109,7 @@ hd_private::hd_private(const ec_secret& secret,
 // Factories.
 // ----------------------------------------------------------------------------
 
-hd_private hd_private::from_seed(data_slice seed, uint64_t prefixes)
+hd_private hd_private::from_seed(const data_slice& seed, uint64_t prefixes)
 {
     // This is a magic constant from BIP32.
     static const auto magic = to_chunk("Bitcoin seed");
@@ -217,8 +217,7 @@ hd_key hd_private::to_hd_key() const
 {
     static constexpr uint8_t private_key_padding = 0x00;
 
-    hd_key out;
-    build_checked_array(out,
+    return build_checked_array<hd_key_size>(
     {
         to_big_endian(to_prefix(lineage_.prefixes)),
         to_array(lineage_.depth),
@@ -228,8 +227,6 @@ hd_key hd_private::to_hd_key() const
         to_array(private_key_padding),
         secret_
     });
-
-    return out;
 }
 
 hd_public hd_private::to_public() const

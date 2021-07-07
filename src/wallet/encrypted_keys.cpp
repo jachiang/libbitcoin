@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,24 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/encrypted_keys.hpp>
+#include <bitcoin/system/wallet/encrypted_keys.hpp>
 
 #include <cstdint>
 #include <cstddef>
 #include <algorithm>
 #include <stdexcept>
 #include <boost/locale.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/math/checksum.hpp>
-#include <bitcoin/bitcoin/math/crypto.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
-#include <bitcoin/bitcoin/unicode/unicode.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
-#include <bitcoin/bitcoin/utility/endian.hpp>
-#include <bitcoin/bitcoin/wallet/ec_private.hpp>
-#include <bitcoin/bitcoin/wallet/ec_public.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/math/checksum.hpp>
+#include <bitcoin/system/math/crypto.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
+#include <bitcoin/system/unicode/unicode.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/data.hpp>
+#include <bitcoin/system/utility/endian.hpp>
+#include <bitcoin/system/wallet/ec_private.hpp>
+#include <bitcoin/system/wallet/ec_public.hpp>
 #include "parse_encrypted_keys/parse_encrypted_key.hpp"
 #include "parse_encrypted_keys/parse_encrypted_prefix.hpp"
 #include "parse_encrypted_keys/parse_encrypted_private.hpp"
@@ -71,6 +71,8 @@ static bool address_salt(ek_salt& salt, const ec_compressed& point,
     return address ? address_salt(salt, address) : false;
 }
 
+#ifdef WITH_ICU
+
 static bool address_salt(ek_salt& salt, const ec_secret& secret,
     uint8_t version, bool compressed)
 {
@@ -99,6 +101,8 @@ static bool address_validate(const ek_salt& salt, const ec_secret& secret,
     return address ? address_validate(salt, address) : false;
 }
 
+#endif
+
 // point_
 // ----------------------------------------------------------------------------
 
@@ -116,31 +120,43 @@ static one_byte point_sign(uint8_t byte, const hash_digest& hash)
     return to_array(sign_byte);
 }
 
+#ifdef WITH_ICU
+
 static one_byte point_sign(const one_byte& single, const hash_digest& hash)
 {
     return point_sign(single.front(), hash);
 }
 
+#endif
+
 // scrypt_
 // ----------------------------------------------------------------------------
 
-static hash_digest scrypt_token(data_slice data, data_slice salt)
+#ifdef WITH_ICU
+
+static hash_digest scrypt_token(const data_slice& data, const data_slice& salt)
 {
     // Arbitrary scrypt parameters from BIP38.
-    return scrypt<hash_size>(data, salt, 16384u, 8u, 8u);
+    return scrypt<hash_size>(data, salt, 16384, 8, 8);
 }
 
-static long_hash scrypt_pair(data_slice data, data_slice salt)
+#endif
+
+static long_hash scrypt_pair(const data_slice& data, const data_slice& salt)
 {
     // Arbitrary scrypt parameters from BIP38.
-    return scrypt<long_hash_size>(data, salt, 1024u, 1u, 1u);
+    return scrypt<long_hash_size>(data, salt, 1024, 1, 1);
 }
 
-static long_hash scrypt_private(data_slice data, data_slice salt)
+#ifdef WITH_ICU
+
+static long_hash scrypt_private(const data_slice& data, const data_slice& salt)
 {
     // Arbitrary scrypt parameters from BIP38.
-    return scrypt<long_hash_size>(data, salt, 16384u, 8u, 8u);
+    return scrypt<long_hash_size>(data, salt, 16384, 8, 8);
 }
+
+#endif
 
 // set_flags
 // ----------------------------------------------------------------------------
@@ -161,6 +177,8 @@ static one_byte set_flags(bool compressed, bool lot_sequence, bool multiplied)
     return to_array(byte);
 }
 
+#ifdef WITH_ICU
+
 static one_byte set_flags(bool compressed, bool lot_sequence)
 {
     return set_flags(compressed, lot_sequence, false);
@@ -170,6 +188,8 @@ static one_byte set_flags(bool compressed)
 {
     return set_flags(compressed, false);
 }
+
+#endif
 
 // create_key_pair
 // ----------------------------------------------------------------------------
@@ -186,11 +206,10 @@ static void create_private_key(encrypted_private& out_private,
     const auto combined = splice(slice<quarter, half>(encrypt1),
         slice<half, half + quarter>(seed));
 
-    auto encrypt2 = xor_data<half>(combined, derived1, 0, half);
+    auto encrypt2 = xor_offset<half, 0, half>(combined, derived1);
     aes256_encrypt(derived2, encrypt2);
     const auto quarter1 = slice<0, quarter>(encrypt1);
-
-    build_checked_array(out_private,
+    out_private = build_checked_array<ek_private_decoded_size>(
     {
         prefix,
         flags,
@@ -216,11 +235,11 @@ static bool create_public_key(encrypted_public& out_public,
     auto encrypted1 = xor_data<half>(hash, derived1);
     aes256_encrypt(derived2, encrypted1);
 
-    auto encrypted2 = xor_data<half>(hash, derived1, half);
+    auto encrypted2 = xor_offset<half, half, half>(hash, derived1);
     aes256_encrypt(derived2, encrypted2);
 
     const auto sign = point_sign(point.front(), derived2);
-    return build_checked_array(out_public,
+    out_public = build_checked_array<encrypted_public_decoded_size>(
     {
         prefix,
         flags,
@@ -230,6 +249,8 @@ static bool create_public_key(encrypted_public& out_public,
         encrypted1,
         encrypted2
     });
+
+    return true;
 }
 
 // There is no scenario requiring a public key, we support it for completeness.
@@ -288,7 +309,7 @@ static data_chunk normal(const std::string& passphrase)
 }
 
 static bool create_token(encrypted_token& out_token,
-    const std::string& passphrase, data_slice owner_salt,
+    const std::string& passphrase, const data_slice& owner_salt,
     const ek_entropy& owner_entropy,
     const byte_array<parse_encrypted_token::prefix_size>& prefix)
 {
@@ -305,12 +326,14 @@ static bool create_token(encrypted_token& out_token,
     if (!secret_to_public(point, factor))
         return false;
 
-    return build_checked_array(out_token,
+    out_token = build_checked_array<encrypted_token_decoded_size>(
     {
         prefix,
         owner_entropy,
         point
     });
+
+    return true;
 }
 
 // The salt here is owner-supplied random bits, not the address hash.
@@ -356,10 +379,10 @@ bool encrypt(encrypted_private& out_private, const ec_secret& secret,
     auto encrypted1 = xor_data<half>(secret, derived.left);
     aes256_encrypt(derived.right, encrypted1);
 
-    auto encrypted2 = xor_data<half>(secret, derived.left, half);
+    auto encrypted2 = xor_offset<half, half, half>(secret, derived.left);
     aes256_encrypt(derived.right, encrypted2);
 
-    return build_checked_array(out_private,
+    out_private = build_checked_array<ek_private_decoded_size>(
     {
         prefix,
         set_flags(compressed),
@@ -367,6 +390,8 @@ bool encrypt(encrypted_private& out_private, const ec_secret& secret,
         encrypted1,
         encrypted2
     });
+
+    return true;
 }
 
 // decrypt private_key
@@ -391,7 +416,7 @@ static bool decrypt_multiplied(ec_secret& out_secret,
     auto encrypt2 = parse.data2();
 
     aes256_decrypt(derived.right, encrypt2);
-    const auto decrypt2 = xor_data<half>(encrypt2, derived.left, 0, half);
+    const auto decrypt2 = xor_offset<half, 0, half>(encrypt2, derived.left);
     auto part = split(decrypt2);
     auto extended = splice(encrypt1, part.left);
 
@@ -483,7 +508,7 @@ bool decrypt(ec_compressed& out_point, uint8_t& out_version,
     const auto decrypt1 = xor_data<half>(encrypt.left, derived.left);
 
     aes256_decrypt(derived.right, encrypt.right);
-    const auto decrypt2 = xor_data<half>(encrypt.right, derived.left, 0, half);
+    const auto decrypt2 = xor_offset<half, 0, half>(encrypt.right, derived.left);
 
     const auto sign_byte = point_sign(parse.sign(), derived.right);
     auto product = splice(sign_byte, decrypt1, decrypt2);
