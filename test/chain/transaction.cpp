@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,9 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 using namespace bc;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(chain_transaction_tests)
 
@@ -867,7 +868,7 @@ BOOST_AUTO_TEST_CASE(transaction__is_confirmed_double_spend__unspent_inputs__ret
 {
     chain::transaction instance;
     instance.inputs().emplace_back();
-    instance.inputs().back().previous_output().metadata.spent = false;
+    instance.inputs().back().previous_output().metadata.confirmed_spent = false;
     BOOST_REQUIRE(!instance.is_confirmed_double_spend());
 }
 
@@ -875,7 +876,7 @@ BOOST_AUTO_TEST_CASE(transaction__is_confirmed_double_spend__spent_input__return
 {
     chain::transaction instance;
     instance.inputs().emplace_back();
-    instance.inputs().back().previous_output().metadata.spent = true;
+    instance.inputs().back().previous_output().metadata.confirmed_spent = true;
     BOOST_REQUIRE(instance.is_confirmed_double_spend());
 }
 

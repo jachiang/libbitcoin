@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,33 +17,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <bitcoin/bitcoin/utility/property_tree.hpp>
+#include <bitcoin/system/utility/property_tree.hpp>
 
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <string>
 #include <vector>
 #include <boost/iostreams/stream.hpp>
 #include <boost/property_tree/ptree.hpp>
+#undef BOOST_BIND_NO_PLACEHOLDERS
 #include <boost/property_tree/json_parser.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/config/base16.hpp>
-#include <bitcoin/bitcoin/config/header.hpp>
-#include <bitcoin/bitcoin/config/hash160.hpp>
-#include <bitcoin/bitcoin/config/hash256.hpp>
-#include <bitcoin/bitcoin/config/input.hpp>
-#include <bitcoin/bitcoin/config/output.hpp>
-#include <bitcoin/bitcoin/config/transaction.hpp>
-#include <bitcoin/bitcoin/math/stealth.hpp>
-#include <bitcoin/bitcoin/utility/collection.hpp>
-
+#define BOOST_BIND_NO_PLACEHOLDERS
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/config/base16.hpp>
+#include <bitcoin/system/config/header.hpp>
+#include <bitcoin/system/config/hash160.hpp>
+#include <bitcoin/system/config/hash256.hpp>
+#include <bitcoin/system/math/stealth.hpp>
+#include <bitcoin/system/utility/collection.hpp>
 
 namespace libbitcoin {
+namespace system {
 
 using namespace pt;
-using namespace bc::config;
-using namespace bc::machine;
-using namespace bc::wallet;
+using namespace bc::system::config;
+using namespace bc::system::machine;
+using namespace bc::system::wallet;
 using namespace boost::iostreams;
 
 // property_tree is very odd in that what one might consider a node or element,
@@ -64,7 +64,7 @@ ptree property_list(const config::header& header)
     ptree tree;
     tree.put("bits", block_header.bits());
     tree.put("hash", hash256(block_header.hash()));
-    tree.put("merkle_tree_hash", hash256(block_header.merkle()));
+    tree.put("merkle_root", hash256(block_header.merkle_root()));
     tree.put("nonce", block_header.nonce());
     tree.put("previous_block_hash", hash256(block_header.previous_block_hash()));
     tree.put("time_stamp", block_header.timestamp());
@@ -310,6 +310,38 @@ ptree property_tree(const settings_list& settings)
     return tree;
 }
 
+// (non-metadata) hash / hash_list
+
+ptree property_list(const hash_digest& hash)
+{
+    ptree tree;
+    tree.put_value(hash256(hash));
+    return tree;
+}
+
+ptree property_tree(const hash_digest& hash)
+{
+    ptree tree;
+    tree.add_child("hash", property_list(hash));
+    return tree;
+}
+
+ptree property_list(const hash_list& hashes, bool json)
+{
+    ptree tree;
+    for (const auto& hash: hashes)
+        add_child(tree, "hash", property_list(hash), json);
+
+    return tree;
+}
+
+ptree property_tree(const hash_list& hashes, bool json)
+{
+    ptree tree;
+    tree.add_child("hashes", property_list(hashes, json));
+    return tree;
+}
+
 // sequence
 
 ptree property_tree(uint64_t height, uint32_t sequence)
@@ -348,4 +380,128 @@ bool property_tree(ptree& out, const std::string& json)
     }
 }
 
+// stealth_address
+
+ptree property_list(const stealth_address& stealth, bool json)
+{
+    // We don't serialize a "reuse key" value as this is strictly an
+    // optimization for the purpose of serialization and otherwise complicates
+    // understanding of what is actually otherwise very simple behavior.
+    // So instead we emit the reused key as one of the spend keys.
+    // This means that it is typical to see the same key in scan and spend.
+
+    const auto spends = cast<ec_compressed, ec_public>(
+        stealth.spend_keys());
+    const auto spends_values = property_value_list("public_key", spends, json);
+
+    ptree tree;
+    tree.put("encoded", stealth);
+    tree.put("filter", stealth.filter());
+    tree.put("scan_public_key", ec_public(stealth.scan_key()));
+    tree.put("signatures", stealth.signatures());
+    tree.add_child("spends", spends_values);
+    tree.put("version", stealth.version());
+    return tree;
+}
+
+ptree property_tree(const stealth_address& stealth, bool json)
+{
+    ptree tree;
+    tree.add_child("stealth_address", property_list(stealth, json));
+    return tree;
+}
+
+// uri
+
+ptree property_tree(const bitcoin_uri& uri)
+{
+    ptree uri_props;
+
+    if (!uri.address().empty())
+        uri_props.put("address", uri.address());
+
+    if (uri.amount() != 0)
+        uri_props.put("amount", uri.amount());
+
+    if (!uri.label().empty())
+        uri_props.put("label", uri.label());
+
+    if (!uri.message().empty())
+        uri_props.put("message", uri.message());
+
+    if (!uri.r().empty())
+        uri_props.put("r", uri.r());
+
+    uri_props.put("scheme", "bitcoin");
+
+    ptree tree;
+    tree.add_child("uri", uri_props);
+    return tree;
+}
+
+// compact_filter
+
+ptree property_list(const message::compact_filter& filter, bool )
+{
+    ptree tree;
+    tree.put("filter_type", filter.filter_type());
+    tree.put("block_hash", hash256(filter.block_hash()));
+    tree.put("filter", base16(filter.filter()));
+
+    return tree;
+}
+
+ptree property_tree(const message::compact_filter& filter, bool json)
+{
+    ptree tree;
+    tree.add_child("compact_filter", property_list(filter, json));
+    return tree;
+}
+
+// compact_filter_checkpoint
+
+ptree property_list(const message::compact_filter_checkpoint& checkpoint,
+    bool json)
+{
+    ptree tree;
+    tree.put("filter_type", checkpoint.filter_type());
+    tree.put("stop_hash", hash256(checkpoint.stop_hash()));
+    tree.add_child("filter_headers", property_list(
+        checkpoint.filter_headers(), json));
+
+    return tree;
+}
+
+ptree property_tree(const message::compact_filter_checkpoint& checkpoint,
+    bool json)
+{
+    ptree tree;
+    tree.add_child("compact_filter_checkpoint", property_list(checkpoint, json));
+    return tree;
+}
+
+// compact_filter_headers
+
+ptree property_list(const message::compact_filter_headers& headers, bool json)
+{
+    ptree tree;
+    tree.put("filter_type", headers.filter_type());
+    tree.put("stop_hash", hash256(headers.stop_hash()));
+    tree.put("previous_filter_header", hash256(
+        headers.previous_filter_header()));
+
+    tree.add_child("filter_hashes", property_list(headers.filter_hashes(),
+        json));
+
+    return tree;
+}
+
+ptree property_tree(const message::compact_filter_headers& headers, bool json)
+{
+    ptree tree;
+    tree.add_child("compact_filter_headers", property_list(headers, json));
+    return tree;
+}
+
+} // namespace system
 } // namespace libbitcoin

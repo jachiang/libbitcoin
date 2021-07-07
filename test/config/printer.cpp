@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -22,10 +22,10 @@
 #include <boost/program_options.hpp>
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test_suite.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 namespace po = boost::program_options;
-using namespace bc::config;
+using namespace bc::system::config;
 
 BOOST_AUTO_TEST_SUITE(printer_tests)
 
@@ -436,7 +436,7 @@ BOOST_AUTO_TEST_CASE(printer__generate_parameters__one_option__expected_paramete
         ("foo_bar,f", "Foobar option name."));
     BX_PRINTER_GENERATE_PARAMETERS(1u);
     const auto& parameters = help.get_parameters();
-    BOOST_REQUIRE_EQUAL(parameters[0].get_short_name(), 'f');
+    BOOST_REQUIRE_EQUAL(parameters[0].short_name(), 'f');
 }
 
 BOOST_AUTO_TEST_CASE(printer__generate_parameters__unsorted_three_options__expected_sorted_parameters)
@@ -447,9 +447,9 @@ BOOST_AUTO_TEST_CASE(printer__generate_parameters__unsorted_three_options__expec
         ("third", "Third option description."));
     BX_PRINTER_GENERATE_PARAMETERS(3u);
     const auto& parameters = help.get_parameters();
-    BOOST_REQUIRE_EQUAL(parameters[0].get_long_name(), "third");
-    BOOST_REQUIRE_EQUAL(parameters[1].get_short_name(), 'f');
-    BOOST_REQUIRE_EQUAL(parameters[2].get_description(), "Second option description.");
+    BOOST_REQUIRE_EQUAL(parameters[0].long_name(), "third");
+    BOOST_REQUIRE_EQUAL(parameters[1].short_name(), 'f');
+    BOOST_REQUIRE_EQUAL(parameters[2].description(), "Second option description.");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -472,9 +472,9 @@ BOOST_AUTO_TEST_CASE(printer__initialize__unsorted_multitple_options__expected_s
     BOOST_REQUIRE_EQUAL(names[0].second, 42);
     BOOST_REQUIRE_EQUAL(names[1].first, "negative-one");
     BOOST_REQUIRE_EQUAL(names[1].second, -1);
-    BOOST_REQUIRE_EQUAL(parameters[0].get_long_name(), "third");
-    BOOST_REQUIRE_EQUAL(parameters[1].get_short_name(), 'f');
-    BOOST_REQUIRE_EQUAL(parameters[2].get_description(), "Second option description.");
+    BOOST_REQUIRE_EQUAL(parameters[0].long_name(), "third");
+    BOOST_REQUIRE_EQUAL(parameters[1].short_name(), 'f');
+    BOOST_REQUIRE_EQUAL(parameters[2].description(), "Second option description.");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

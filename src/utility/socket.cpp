@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,15 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/utility/socket.hpp>
+#include <bitcoin/system/utility/socket.hpp>
 
 #include <memory>
-#include <bitcoin/bitcoin/config/authority.hpp>
-#include <bitcoin/bitcoin/utility/asio.hpp>
-#include <bitcoin/bitcoin/utility/thread.hpp>
-#include <bitcoin/bitcoin/utility/threadpool.hpp>
+#include <bitcoin/system/config/authority.hpp>
+#include <bitcoin/system/utility/asio.hpp>
+#include <bitcoin/system/utility/thread.hpp>
+#include <bitcoin/system/utility/threadpool.hpp>
 
 namespace libbitcoin {
+namespace system {
 
 socket::socket(threadpool& thread)
   : thread_(thread),
@@ -68,7 +69,7 @@ void socket::stop()
     // Critical Section.
     unique_lock lock(mutex_);
 
-    // Signal the end of oustanding async socket functions (read).
+    // Signal the end of outstanding async socket functions (read).
     socket_.shutdown(asio::socket::shutdown_both, ignore);
 
     // BUGBUG: this is documented to fail on Windows XP and Server 2003.
@@ -77,4 +78,5 @@ void socket::stop()
     ///////////////////////////////////////////////////////////////////////////
 }
 
+} // namespace system
 } // namespace libbitcoin

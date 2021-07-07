@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,26 +16,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/math/ring_signature.hpp>
+#include <bitcoin/system/math/ring_signature.hpp>
 
 #include <algorithm>
 #include <map>
 #include <numeric>
 #include <vector>
 #include <secp256k1.h>
-#include <bitcoin/bitcoin/math/ec_point.hpp>
-#include <bitcoin/bitcoin/math/ec_scalar.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
-#include <bitcoin/bitcoin/wallet/hd_private.hpp>
+#include <bitcoin/system/math/ec_point.hpp>
+#include <bitcoin/system/math/ec_scalar.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/utility/serializer.hpp>
+#include <bitcoin/system/wallet/hd_private.hpp>
 
 namespace libbitcoin {
+namespace system {
 
 typedef std::vector<uint32_t> index_list;
 typedef std::map<ec_compressed, ec_secret> secret_keys_map;
 
-static ec_scalar borromean_hash(const hash_digest& M, data_slice R, uint32_t i,
-    uint32_t j)
+static ec_scalar borromean_hash(const hash_digest& M, const data_slice& R,
+    uint32_t i, uint32_t j)
 {
     // e = H(M || R || i || j)
     data_chunk data(hash_size + R.size() + sizeof(uint32_t) + sizeof(uint32_t));
@@ -295,7 +296,7 @@ static ec_point calculate_last_R_verify(const point_list& ring,
 // API
 //-----------------------------------------------------------------------------
 
-hash_digest digest(data_slice message, const key_rings& rings)
+hash_digest digest(const data_slice& message, const key_rings& rings)
 {
     const auto sum = [](size_t size, const point_list& ring)
     {
@@ -381,4 +382,5 @@ bool verify(const key_rings& rings, const hash_digest& digest,
     return e0_hash == signature.challenge;
 }
 
+} // namespace system
 } // namespace libbitcoin

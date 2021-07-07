@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,11 +16,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/chain/block.hpp>
+#include <bitcoin/system/chain/block.hpp>
 
 #include <algorithm>
 #include <cstddef>
-#include <limits>
 #include <cfenv>
 #include <cmath>
 #include <iterator>
@@ -30,74 +29,71 @@
 #include <utility>
 #include <unordered_map>
 #include <boost/range/adaptor/reversed.hpp>
-#include <bitcoin/bitcoin/chain/chain_state.hpp>
-#include <bitcoin/bitcoin/chain/compact.hpp>
-#include <bitcoin/bitcoin/chain/input_point.hpp>
-#include <bitcoin/bitcoin/chain/script.hpp>
-#include <bitcoin/bitcoin/config/checkpoint.hpp>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/error.hpp>
-#include <bitcoin/bitcoin/formats/base_16.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/machine/number.hpp>
-#include <bitcoin/bitcoin/machine/opcode.hpp>
-#include <bitcoin/bitcoin/machine/rule_fork.hpp>
-#include <bitcoin/bitcoin/message/messages.hpp>
-#include <bitcoin/bitcoin/settings.hpp>
-#include <bitcoin/bitcoin/utility/asio.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/chain/chain_state.hpp>
+#include <bitcoin/system/chain/input_point.hpp>
+#include <bitcoin/system/chain/script.hpp>
+#include <bitcoin/system/config/checkpoint.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/error.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/machine/opcode.hpp>
+#include <bitcoin/system/machine/rule_fork.hpp>
+#include <bitcoin/system/message/messages.hpp>
+#include <bitcoin/system/settings.hpp>
+#include <bitcoin/system/utility/asio.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace chain {
 
-using namespace bc::config;
-using namespace bc::machine;
+using namespace bc::system::config;
+using namespace bc::system::machine;
 using namespace boost::adaptors;
 
 // Constructors.
 //-----------------------------------------------------------------------------
 
 block::block()
-  : header_(),
-    metadata{}
+  : metadata{}
 {
 }
 
 block::block(const block& other)
-  : total_inputs_(other.total_inputs_cache()),
-    non_coinbase_inputs_(other.non_coinbase_inputs_cache()),
+  : metadata(other.metadata),
     header_(other.header_),
     transactions_(other.transactions_),
-    metadata(other.metadata)
+    total_inputs_(other.total_inputs_cache()),
+    non_coinbase_inputs_(other.non_coinbase_inputs_cache())
 {
 }
 
 block::block(block&& other)
-  : total_inputs_(other.total_inputs_cache()),
-    non_coinbase_inputs_(other.non_coinbase_inputs_cache()),
+  : metadata(other.metadata),
     header_(std::move(other.header_)),
     transactions_(std::move(other.transactions_)),
-    metadata(other.metadata)
+    total_inputs_(other.total_inputs_cache()),
+    non_coinbase_inputs_(other.non_coinbase_inputs_cache())
 {
 }
 
 block::block(const chain::header& header,
     const transaction::list& transactions)
-  : header_(header),
-    transactions_(transactions),
-    metadata{}
+  : metadata{},
+    header_(header),
+    transactions_(transactions)
 {
 }
 
 block::block(chain::header&& header, transaction::list&& transactions)
-  : header_(std::move(header)),
-    transactions_(std::move(transactions)),
-    metadata{}
+  : metadata{},
+    header_(std::move(header)),
+    transactions_(std::move(transactions))
 {
 }
 
@@ -178,7 +174,8 @@ bool block::from_data(std::istream& stream, bool witness)
 // Full block deserialization is always canonical encoding.
 bool block::from_data(reader& source, bool witness)
 {
-    metadata.start_deserialize = asio::steady_clock::now();
+    const auto start = asio::steady_clock::now();
+
     reset();
 
     if (!header_.from_data(source, true))
@@ -186,7 +183,7 @@ bool block::from_data(reader& source, bool witness)
 
     const auto count = source.read_size_little_endian();
 
-    // Guard against potential for arbitary memory allocation.
+    // Guard against potential for arbitrary memory allocation.
     if (count > max_block_size)
         source.invalidate();
     else
@@ -204,7 +201,7 @@ bool block::from_data(reader& source, bool witness)
     if (!source)
         reset();
 
-    metadata.end_deserialize = asio::steady_clock::now();
+    metadata.deserialize = asio::steady_clock::now() - start;
     return source;
 }
 
@@ -230,7 +227,7 @@ data_chunk block::to_data(bool witness) const
     const auto size = serialized_size(witness);
     data.reserve(size);
     data_sink ostream(data);
-    to_data(ostream);
+    to_data(ostream, witness);
     ostream.flush();
     BITCOIN_ASSERT(data.size() == size);
     return data;
@@ -374,22 +371,22 @@ hash_digest block::hash() const
 // 64 bit chain should not exceed 75, using a limit of: 10 + log2(height) + 1.
 size_t block::locator_size(size_t top)
 {
-    // Set rounding behavior, not consensus-related, thread side effect :<.
-    std::fesetround(FE_UPWARD);
-
-    const auto first_ten_or_top = std::min(size_t(10), top);
+    const auto first_ten_or_top = std::min(size_t{10}, top);
     const auto remaining = top - first_ten_or_top;
-    const auto back_off = remaining == 0 ? 0.0 :
-                          remaining == 1 ? 1.0 : std::log2(remaining);
-    const auto rounded_up_log = static_cast<size_t>(std::nearbyint(back_off));
-    return first_ten_or_top + rounded_up_log + size_t(1);
+
+    // Set log2(0) -> 0, log2(1) -> 1 and round up higher exponential backoff
+    // results to next whole number by adding 0.5 and truncating.
+    const auto back_off = remaining < 2u ? remaining :
+        static_cast<size_t>(std::log2(remaining) + 0.5);
+
+    return first_ten_or_top + back_off + 1u;
 }
 
 // This algorithm is a network best practice, not a consensus rule.
 block::indexes block::locator_heights(size_t top)
 {
-    size_t step = 1;
-    block::indexes heights;
+    size_t step = 1u;
+    indexes heights;
     const auto reservation = locator_size(top);
     heights.reserve(reservation);
 
@@ -399,8 +396,8 @@ block::indexes block::locator_heights(size_t top)
         heights.push_back(height);
 
         // Push top 10 indexes first, then back off exponentially.
-        if (heights.size() > 10)
-            step <<= 1;
+        if (heights.size() > 10u)
+            step <<= 1u;
     }
 
     // Push the genesis block index.
@@ -437,12 +434,12 @@ void block::strip_witness()
 
 // static
 uint64_t block::subsidy(size_t height, uint64_t subsidy_interval,
-    uint64_t initial_block_subsidy_satoshi)
+    uint64_t initial_block_subsidy_satoshi, bool bip42)
 {
     static const auto overflow = sizeof(uint64_t) * byte_bits;
     auto subsidy = initial_block_subsidy_satoshi;
     const auto halvings = height / subsidy_interval;
-    subsidy >>= (halvings >= overflow ? 0 : halvings);
+    subsidy >>= (bip42 && halvings >= overflow ? 0 : halvings);
     return subsidy;
 }
 
@@ -450,8 +447,8 @@ uint64_t block::subsidy(size_t height, uint64_t subsidy_interval,
 size_t block::signature_operations() const
 {
     const auto state = header_.metadata.state;
-    const auto bip16 = state->is_enabled(rule_fork::bip16_rule);
-    const auto bip141 = state->is_enabled(rule_fork::bip141_rule);
+    const auto bip16 = state->is_enabled(bip16_rule);
+    const auto bip141 = state->is_enabled(bip141_rule);
     return state ? signature_operations(bip16, bip141) : max_size_t;
 }
 
@@ -662,7 +659,7 @@ bool block::is_internal_double_spend() const
 
 bool block::is_valid_merkle_root() const
 {
-    return generate_merkle_root() == header_.merkle();
+    return generate_merkle_root() == header_.merkle_root();
 }
 
 // Overflow returns max_uint64.
@@ -686,18 +683,18 @@ uint64_t block::claim() const
 
 // Overflow returns max_uint64.
 uint64_t block::reward(size_t height, uint64_t subsidy_interval,
-    uint64_t initial_block_subsidy_satoshi) const
+    uint64_t initial_block_subsidy_satoshi, bool bip42) const
 {
     ////static_assert(max_money() < max_uint64, "overflow sentinel invalid");
     return ceiling_add(fees(), subsidy(height, subsidy_interval,
-        initial_block_subsidy_satoshi));
+        initial_block_subsidy_satoshi, bip42));
 }
 
 bool block::is_valid_coinbase_claim(size_t height, uint64_t subsidy_interval,
-    uint64_t initial_block_subsidy_satoshi) const
+    uint64_t initial_block_subsidy_satoshi, bool bip42) const
 {
     return claim() <= reward(height, subsidy_interval,
-        initial_block_subsidy_satoshi);
+        initial_block_subsidy_satoshi, bip42);
 }
 
 bool block::is_valid_coinbase_script(size_t height) const
@@ -799,14 +796,12 @@ code block::connect_transactions(const chain_state& state) const
 
 // These checks are self-contained; blockchain (and so version) independent.
 code block::check(uint64_t max_money, uint32_t timestamp_limit_seconds,
-    uint32_t proof_of_work_limit, bool scrypt) const
+    uint32_t proof_of_work_limit, bool scrypt, bool header) const
 {
-    metadata.start_check = asio::steady_clock::now();
-
     code ec;
 
-    if ((ec = header_.check(timestamp_limit_seconds, proof_of_work_limit,
-        scrypt)))
+    if (header && ((ec = header_.check(timestamp_limit_seconds,
+        proof_of_work_limit, scrypt))))
         return ec;
 
     // TODO: relates to total of tx.size(false) (pool cache).
@@ -849,8 +844,8 @@ code block::check(uint64_t max_money, uint32_t timestamp_limit_seconds,
         return check_transactions(max_money);
 }
 
-code block::accept(const bc::settings& settings, bool transactions, bool header)
-    const
+code block::accept(const system::settings& settings, bool transactions,
+    bool header) const
 {
     const auto state = header_.metadata.state;
     return state ? accept(*state, settings, transactions, header) :
@@ -858,22 +853,21 @@ code block::accept(const bc::settings& settings, bool transactions, bool header)
 }
 
 // These checks assume that prevout caching is completed on all tx.inputs.
-code block::accept(const chain_state& state, const bc::settings& settings,
-    bool transactions, bool header) const
+code block::accept(const chain_state& state,
+    const system::settings& settings, bool transactions, bool header) const
 {
-    metadata.start_accept = asio::steady_clock::now();
-
     code ec;
-    const auto bip16 = state.is_enabled(rule_fork::bip16_rule);
-    const auto bip34 = state.is_enabled(rule_fork::bip34_rule);
-    const auto bip113 = state.is_enabled(rule_fork::bip113_rule);
-    const auto bip141 = state.is_enabled(rule_fork::bip141_rule);
+    const auto bip16 = state.is_enabled(bip16_rule);
+    const auto bip34 = state.is_enabled(bip34_rule);
+    const auto bip42 = state.is_enabled(bip42_rule);
+    const auto bip113 = state.is_enabled(bip113_rule);
+    const auto bip141 = state.is_enabled(bip141_rule);
 
     const auto max_sigops = bip141 ? max_fast_sigops : max_block_sigops;
     const auto block_time = bip113 ? state.median_time_past() :
         header_.timestamp();
 
-    if (header && (ec = header_.accept(state)))
+    if (header && ((ec = header_.accept(state))))
         return ec;
 
     else if (state.is_under_checkpoint())
@@ -888,8 +882,7 @@ code block::accept(const chain_state& state, const bc::settings& settings,
 
     // TODO: relates height to total of tx.fee (pool cach).
     else if (!is_valid_coinbase_claim(state.height(),
-            settings.subsidy_interval(), settings.bitcoin_to_satoshi(
-                settings.initial_block_subsidy_bitcoin())))
+        settings.subsidy_interval_blocks, settings.initial_subsidy(), bip42))
         return error::coinbase_value_limit;
 
     // TODO: relates median time past to tx.locktime (pool cache min tx.time).
@@ -920,14 +913,12 @@ code block::connect() const
 
 code block::connect(const chain_state& state) const
 {
-    metadata.start_connect = asio::steady_clock::now();
-
     if (state.is_under_checkpoint())
         return error::success;
 
-    else
-        return connect_transactions(state);
+    return connect_transactions(state);
 }
 
 } // namespace chain
+} // namespace system
 } // namespace libbitcoin

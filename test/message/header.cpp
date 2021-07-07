@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,9 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
-using namespace bc;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(message_header_tests)
 
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(header__constructor_2__always__equals_params)
     BOOST_REQUIRE_EQUAL(bits, instance.bits());
     BOOST_REQUIRE_EQUAL(nonce, instance.nonce());
     BOOST_REQUIRE(previous == instance.previous_block_hash());
-    BOOST_REQUIRE(merkle == instance.merkle());
+    BOOST_REQUIRE(merkle == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__constructor_3__always__equals_params)
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(header__constructor_3__always__equals_params)
     BOOST_REQUIRE_EQUAL(bits, instance.bits());
     BOOST_REQUIRE_EQUAL(nonce, instance.nonce());
     BOOST_REQUIRE(previous == instance.previous_block_hash());
-    BOOST_REQUIRE(merkle == instance.merkle());
+    BOOST_REQUIRE(merkle == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__constructor_4__always__equals_params)

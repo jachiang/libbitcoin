@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,27 +16,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/config/checkpoint.hpp>
+#include <bitcoin/system/config/checkpoint.hpp>
 
 #include <cstddef>
-#include <iostream>
 #include <regex>
 #include <string>
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/formats/base_16.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
+#include <bitcoin/system/formats/base_16.hpp>
+#include <bitcoin/system/math/hash.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace config {
 
 using namespace boost;
 using namespace boost::program_options;
 
 checkpoint::checkpoint()
-  : height_(0), hash_(bc::null_hash)
+  : height_(0), hash_(null_hash)
 {
 }
 
@@ -85,13 +84,13 @@ std::string checkpoint::to_string() const
 
 config::checkpoint::list checkpoint::sort(const list& checks)
 {
-    const auto comparitor = [](const checkpoint& left, const checkpoint& right)
+    const auto comparator = [](const checkpoint& left, const checkpoint& right)
     {
         return left.height() < right.height();
     };
 
     auto copy = checks;
-    std::sort(copy.begin(), copy.end(), comparitor);
+    std::sort(copy.begin(), copy.end(), comparator);
     return copy;
 }
 
@@ -156,4 +155,5 @@ std::ostream& operator<<(std::ostream& output, const checkpoint& argument)
 }
 
 } // namespace config
+} // namespace system
 } // namespace libbitcoin

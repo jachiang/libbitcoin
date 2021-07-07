@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,10 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
-using namespace bc;
-using namespace bc::message;
+using namespace bc::system;
+using namespace bc::system::message;
 
 BOOST_AUTO_TEST_SUITE(message_block_tests)
 
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(block__constructor_7__always__equals_params)
 
 BOOST_AUTO_TEST_CASE(block__factory_data_1__genesis_mainnet__success)
 {
-    const chain::block genesis = settings(bc::config::settings::mainnet).genesis_block;
+    const chain::block genesis = settings(config::settings::mainnet).genesis_block;
     BOOST_REQUIRE_EQUAL(genesis.serialized_size(), 285u);
     BOOST_REQUIRE_EQUAL(genesis.header().serialized_size(), 80u);
 
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(block__factory_data_1__genesis_mainnet__success)
     BOOST_REQUIRE(genesis.header() == block.header());
 
     // Verify merkle root from transactions.
-    BOOST_REQUIRE(block.generate_merkle_root() == genesis.header().merkle());
+    BOOST_REQUIRE(block.generate_merkle_root() == genesis.header().merkle_root());
 
     auto raw_reserialization = block.to_data(version::level::minimum);
     BOOST_REQUIRE(raw_reserialization == raw_block);
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(block__factory_data_1__genesis_mainnet__success)
 
 BOOST_AUTO_TEST_CASE(block__factory_data_2__genesis_mainnet__success)
 {
-    const chain::block genesis = settings(bc::config::settings::mainnet).genesis_block;
+    const chain::block genesis = settings(config::settings::mainnet).genesis_block;
     BOOST_REQUIRE_EQUAL(genesis.serialized_size(), 285u);
     BOOST_REQUIRE_EQUAL(genesis.header().serialized_size(), 80u);
 
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(block__factory_data_2__genesis_mainnet__success)
     BOOST_REQUIRE(genesis.header() == block.header());
 
     // Verify merkle root from transactions.
-    BOOST_REQUIRE(block.generate_merkle_root() == genesis.header().merkle());
+    BOOST_REQUIRE(block.generate_merkle_root() == genesis.header().merkle_root());
 
     data_chunk raw_reserialization;
     data_sink sink(raw_reserialization);
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(block__factory_data_3__genesis_mainnet__success)
     BOOST_REQUIRE(genesis.header() == block.header());
 
     // Verify merkle root from transactions.
-    BOOST_REQUIRE(block.generate_merkle_root() == genesis.header().merkle());
+    BOOST_REQUIRE(block.generate_merkle_root() == genesis.header().merkle_root());
 
     data_chunk raw_reserialization;
     data_sink sink(raw_reserialization);

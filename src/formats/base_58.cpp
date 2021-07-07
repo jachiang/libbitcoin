@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,12 +16,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/formats/base_58.hpp>
+#include <bitcoin/system/formats/base_58.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/system/utility/assert.hpp>
 
 namespace libbitcoin {
+namespace system {
 
 const std::string base58_chars =
     "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -52,7 +53,7 @@ auto search_first_nonzero(const Data& data) -> decltype(data.cbegin())
     return first_nonzero;
 }
 
-size_t count_leading_zeros(data_slice unencoded)
+size_t count_leading_zeros(const data_slice& unencoded)
 {
     // Skip and count leading '1's.
     size_t leading_zeros = 0;
@@ -80,7 +81,7 @@ void pack_value(data_chunk& indexes, size_t carry)
     BITCOIN_ASSERT(carry == 0);
 }
 
-std::string encode_base58(data_slice unencoded)
+std::string encode_base58(const data_slice& unencoded)
 {
     size_t leading_zeros = count_leading_zeros(unencoded);
 
@@ -193,4 +194,5 @@ bool decode_base58_private(uint8_t* out, size_t out_size, const char* in)
     return true;
 }
 
+} // namespace system
 } // namespace libbitcoin

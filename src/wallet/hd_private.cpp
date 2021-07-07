@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,30 +16,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/hd_private.hpp>
+#include <bitcoin/system/wallet/hd_private.hpp>
 
 #include <cstdint>
 #include <iostream>
 #include <string>
 #include <utility>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/formats/base_58.hpp>
-#include <bitcoin/bitcoin/math/checksum.hpp>
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
-#include <bitcoin/bitcoin/utility/endian.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
-#include <bitcoin/bitcoin/wallet/ec_private.hpp>
-#include <bitcoin/bitcoin/wallet/ec_public.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/formats/base_58.hpp>
+#include <bitcoin/system/math/checksum.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/data.hpp>
+#include <bitcoin/system/utility/endian.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/serializer.hpp>
+#include <bitcoin/system/wallet/ec_private.hpp>
+#include <bitcoin/system/wallet/ec_public.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 
 const uint64_t hd_private::mainnet = to_prefixes(76066276,
@@ -109,7 +110,7 @@ hd_private::hd_private(const ec_secret& secret,
 // Factories.
 // ----------------------------------------------------------------------------
 
-hd_private hd_private::from_seed(data_slice seed, uint64_t prefixes)
+hd_private hd_private::from_seed(const data_slice& seed, uint64_t prefixes)
 {
     // This is a magic constant from BIP32.
     static const auto magic = to_chunk("Bitcoin seed");
@@ -333,4 +334,5 @@ void swap(hd_private& left, hd_private& right)
 }
 
 } // namespace wallet
+} // namespace system
 } // namespace libbitcoin

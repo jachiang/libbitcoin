@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,21 +16,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/config/output.hpp>
+#include <bitcoin/system/config/output.hpp>
 
 #include <cstdint>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/config/point.hpp>
-#include <bitcoin/bitcoin/config/script.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/stealth.hpp>
-#include <bitcoin/bitcoin/utility/string.hpp>
-#include <bitcoin/bitcoin/wallet/stealth_address.hpp>
+#include <bitcoin/system/config/point.hpp>
+#include <bitcoin/system/config/script.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/stealth.hpp>
+#include <bitcoin/system/utility/string.hpp>
+#include <bitcoin/system/wallet/stealth_address.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace config {
 
 using namespace boost::program_options;
@@ -77,7 +77,7 @@ std::istream& operator>>(std::istream& input, output& argument)
     std::string tuple;
     input >> tuple;
 
-    const auto tokens = split(tuple, point::delimeter);
+    const auto tokens = split(tuple, point::delimiter);
     if (tokens.size() < 2 || tokens.size() > 3)
     {
         BOOST_THROW_EXCEPTION(invalid_option_value(tuple));
@@ -149,4 +149,5 @@ std::istream& operator>>(std::istream& input, output& argument)
 }
 
 } // namespace config
+} // namespace system
 } // namespace libbitcoin

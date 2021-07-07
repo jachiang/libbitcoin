@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,17 +16,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/config/base16.hpp>
+#include <bitcoin/system/config/base16.hpp>
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/formats/base_16.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
+#include <bitcoin/system/formats/base_16.hpp>
+#include <bitcoin/system/utility/data.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace config {
 
 base16::base16()
@@ -79,4 +79,5 @@ std::ostream& operator<<(std::ostream& output, const base16& argument)
 }
 
 } // namespace config
+} // namespace system
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,9 +18,9 @@
  */
 #include <boost/test/unit_test.hpp>
 #include <chrono>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
-using namespace bc;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(chain_header_tests)
 
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(header__constructor_2__always__equals_params)
     BOOST_REQUIRE_EQUAL(bits, instance.bits());
     BOOST_REQUIRE_EQUAL(nonce, instance.nonce());
     BOOST_REQUIRE(previous == instance.previous_block_hash());
-    BOOST_REQUIRE(merkle == instance.merkle());
+    BOOST_REQUIRE(merkle == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__constructor_3__always__equals_params)
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(header__constructor_3__always__equals_params)
     BOOST_REQUIRE_EQUAL(bits, instance.bits());
     BOOST_REQUIRE_EQUAL(nonce, instance.nonce());
     BOOST_REQUIRE(previous == instance.previous_block_hash());
-    BOOST_REQUIRE(merkle == instance.merkle());
+    BOOST_REQUIRE(merkle == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__constructor_4__always__equals_params)
@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(header__merkle_accessor_1__always__returns_initialized_valu
         4356344u,
         34564u);
 
-    BOOST_REQUIRE(value == instance.merkle());
+    BOOST_REQUIRE(value == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__merkle_accessor_2__always__returns_initialized_value)
@@ -273,16 +273,16 @@ BOOST_AUTO_TEST_CASE(header__merkle_accessor_2__always__returns_initialized_valu
         4356344u,
         34564u);
 
-    BOOST_REQUIRE(value == instance.merkle());
+    BOOST_REQUIRE(value == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__merkle_setter_1__roundtrip__success)
 {
     const auto expected = hash_literal("abababababababababababababababababababababababababababababababab");
     chain::header instance;
-    BOOST_REQUIRE(expected != instance.merkle());
-    instance.set_merkle(expected);
-    BOOST_REQUIRE(expected == instance.merkle());
+    BOOST_REQUIRE(expected != instance.merkle_root());
+    instance.set_merkle_root(expected);
+    BOOST_REQUIRE(expected == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__merkle_setter_2__roundtrip__success)
@@ -293,9 +293,9 @@ BOOST_AUTO_TEST_CASE(header__merkle_setter_2__roundtrip__success)
     hash_digest duplicate = expected;
 
     chain::header instance;
-    BOOST_REQUIRE(expected != instance.merkle());
-    instance.set_merkle(std::move(duplicate));
-    BOOST_REQUIRE(expected == instance.merkle());
+    BOOST_REQUIRE(expected != instance.merkle_root());
+    instance.set_merkle_root(std::move(duplicate));
+    BOOST_REQUIRE(expected == instance.merkle_root());
 }
 
 BOOST_AUTO_TEST_CASE(header__timestamp_accessor__always__returns_initialized_value)
@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE(header__is_valid_timestamp__timestamp_greater_than_2_hours_
 
 BOOST_AUTO_TEST_CASE(header__is_valid_proof_of_work__bits_exceeds_maximum__returns_false)
 {
-    const settings settings(bc::config::settings::mainnet);
+    const settings settings(config::settings::mainnet);
     chain::header instance;
     instance.set_bits(settings.proof_of_work_limit + 1);
     BOOST_REQUIRE(!instance.is_valid_proof_of_work(settings.proof_of_work_limit, false));
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(header__is_valid_proof_of_work__bits_exceeds_maximum__retur
 
 BOOST_AUTO_TEST_CASE(header__is_valid_proof_of_work__hash_greater_bits__returns_false)
 {
-    const settings settings(bc::config::settings::mainnet);
+    const settings settings(config::settings::mainnet);
     const chain::header instance(
         11234u,
         hash_literal("abababababababababababababababababababababababababababababababab"),
@@ -410,7 +410,7 @@ BOOST_AUTO_TEST_CASE(header__is_valid_proof_of_work__hash_greater_bits__returns_
 
 BOOST_AUTO_TEST_CASE(header__is_valid_proof_of_work__hash_less_than_bits__returns_true)
 {
-    const settings settings(bc::config::settings::mainnet);
+    const settings settings(config::settings::mainnet);
     const chain::header instance(
         4u,
         hash_literal("000000000000000003ddc1e929e2944b8b0039af9aa0d826c480a83d8b39c373"),
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(header__is_valid_proof_of_work__hash_less_than_bits__return
 
 BOOST_AUTO_TEST_CASE(header__is_valid_scrypt_proof_of_work__hash_greater_than_bits__returns_false)
 {
-    const settings settings(bc::config::settings::mainnet);
+    const settings settings(config::settings::mainnet);
     const chain::header instance(
         536870912u,
         hash_literal("abababababababababababababababababababababababababababababababab"),
@@ -438,7 +438,7 @@ BOOST_AUTO_TEST_CASE(header__is_valid_scrypt_proof_of_work__hash_greater_than_bi
 
 BOOST_AUTO_TEST_CASE(header__is_valid_scrypt_proof_of_work__hash_less_than_bits__returns_true)
 {
-    const settings settings(bc::config::settings::mainnet);
+    const settings settings(config::settings::mainnet);
     const chain::header instance(
         536870912u,
         hash_literal("313ced849aafeff324073bb2bd31ecdcc365ed215a34e827bb797ad33d158542"),
@@ -458,7 +458,7 @@ BOOST_AUTO_TEST_CASE(header__proof1__genesis_mainnet__expected)
 
 BOOST_AUTO_TEST_CASE(header__proof2__genesis_mainnet__expected)
 {
-    const chain::block block = settings(bc::config::settings::mainnet)
+    const chain::block block = settings(config::settings::mainnet)
         .genesis_block;
     BOOST_REQUIRE_EQUAL(block.header().proof(), 0x0000000100010001);
 }

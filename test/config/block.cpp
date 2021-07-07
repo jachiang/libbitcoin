@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -20,9 +20,9 @@
 #include <string>
 #include <boost/lexical_cast.hpp>
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
-using namespace bc::config;
+using namespace bc::system::config;
 
 BOOST_AUTO_TEST_SUITE(block_tests)
 

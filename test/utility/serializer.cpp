@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,9 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
-using namespace bc;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(serializer_tests)
 
@@ -369,6 +369,12 @@ BOOST_AUTO_TEST_CASE(roundtrip_variable_uint_big_endian_8_bytes)
     BOOST_REQUIRE((bool)source);
     BOOST_REQUIRE_EQUAL(false, !sink);
     BOOST_REQUIRE_EQUAL(false, !source);
+}
+
+// TODO
+BOOST_AUTO_TEST_CASE(roundtrip_stream)
+{
+    BOOST_REQUIRE(true);
 }
 
 BOOST_AUTO_TEST_CASE(roundtrip_data_chunk)

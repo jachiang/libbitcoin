@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,21 +16,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/machine/interpreter.hpp>
+#include <bitcoin/system/machine/interpreter.hpp>
 
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/error.hpp>
-#include <bitcoin/bitcoin/machine/operation.hpp>
-#include <bitcoin/bitcoin/machine/program.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/error.hpp>
+#include <bitcoin/system/machine/operation.hpp>
+#include <bitcoin/system/machine/program.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace machine {
 
 code interpreter::run(program& program)
 {
     code ec;
 
-    if (!program.is_valid())
+    if (program.is_invalid())
         return error::invalid_script;
 
     for (const auto& op: program)
@@ -63,4 +64,5 @@ code interpreter::run(const operation& op, program& program)
 }
 
 } // namespace machine
+} // namespace system
 } // namespace libbitcoin

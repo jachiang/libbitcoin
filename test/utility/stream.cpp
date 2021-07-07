@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,9 +19,9 @@
 #include <sstream>
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test_suite.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
-using namespace bc;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(stream_tests)
 
@@ -332,6 +332,12 @@ BOOST_AUTO_TEST_CASE(roundtrip_variable_uint_big_endian_8_bytes)
     BOOST_REQUIRE((bool)source);
     BOOST_REQUIRE_EQUAL(false, !sink);
     BOOST_REQUIRE_EQUAL(false, !source);
+}
+
+// TODO
+BOOST_AUTO_TEST_CASE(roundtrip_stream)
+{
+    BOOST_REQUIRE(true);
 }
 
 BOOST_AUTO_TEST_CASE(roundtrip_data_chunk)

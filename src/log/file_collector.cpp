@@ -15,18 +15,19 @@
 
 // Modification of boost implementation to alter log file rotation naming.
 
-#include <bitcoin/bitcoin/log/file_collector.hpp>
+#include <bitcoin/system/log/file_collector.hpp>
 
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/spirit/home/qi/numeric/numeric_utils.hpp>
 
-#include <bitcoin/bitcoin/compat.hpp>
-#include <bitcoin/bitcoin/log/file_char_traits.hpp>
-#include <bitcoin/bitcoin/log/file_collector_repository.hpp>
+#include <bitcoin/system/compat.hpp>
+#include <bitcoin/system/log/file_char_traits.hpp>
+#include <bitcoin/system/log/file_collector_repository.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace log {
 
 namespace filesystem = boost::filesystem;
@@ -41,7 +42,7 @@ inline void move_file(
     filesystem::path const& from,
     filesystem::path const& to)
 {
-#if defined(BOOST_WINDOWS_API)
+#ifdef BOOST_WINDOWS_API
     // On Windows MoveFile already does what we need
     filesystem::rename(from, to);
 #else
@@ -466,4 +467,5 @@ path_string_type file_collector::filename_string(
 }
 
 } // namespace log
+} // namespace system
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,69 +16,69 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/chain/output.hpp>
+#include <bitcoin/system/chain/output.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <sstream>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
-#include <bitcoin/bitcoin/wallet/payment_address.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
+#include <bitcoin/system/wallet/payment_address.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace chain {
 
-using namespace bc::wallet;
+using namespace bc::system::wallet;
 
 // This is a consensus critical value that must be set on reset.
 const uint64_t output::not_found = sighash_null_value;
 
 // These are non-consensus sentinel values used by the store.
-const uint32_t output::validation::unspent = max_uint32;
-const uint8_t output::validation::candidate_spent = 1;
-const uint8_t output::validation::candidate_unspent = 0;
+const uint32_t output::validation::not_spent = max_uint32;
+const uint8_t output::validation::candidate_spent_true = 1;
+const uint8_t output::validation::candidate_spent_false = 0;
 
 // Constructors.
 //-----------------------------------------------------------------------------
 
 output::output()
-  : value_(not_found),
-    script_{},
-    metadata{}
+  : metadata{},
+    value_(not_found),
+    script_{}
 {
 }
 
 output::output(output&& other)
-  : addresses_(other.addresses_cache()),
+  : metadata(other.metadata),
+    addresses_(other.addresses_cache()),
     value_(other.value_),
-    script_(std::move(other.script_)),
-    metadata(other.metadata)
+    script_(std::move(other.script_))
 {
 }
 
 output::output(const output& other)
-  : addresses_(other.addresses_cache()),
+  : metadata(other.metadata),
+    addresses_(other.addresses_cache()),
     value_(other.value_),
-    script_(other.script_),
-    metadata(other.metadata)
+    script_(other.script_)
 {
 }
 
 output::output(uint64_t value, chain::script&& script)
-  : value_(value),
-    script_(std::move(script)),
-    metadata{}
+  : metadata{},
+    value_(value),
+    script_(std::move(script))
 {
 }
 
 output::output(uint64_t value, const chain::script& script)
-  : value_(value),
-    script_(script),
-    metadata{}
+  : metadata{},
+    value_(value),
+    script_(script)
 {
 }
 
@@ -163,12 +163,12 @@ bool output::from_data(reader& source, bool wire, bool)
     if (!wire)
     {
         const auto spent = source.read_byte() == 
-            output::validation::candidate_spent;
+            output::validation::candidate_spent_true;
 
         // These read updateable data in a non-atomic manner.
         // The results are unusable unless externally protected.
-        metadata.candidate_spend = spent;
-        metadata.confirmed_spend_height = source.read_4_bytes_little_endian();
+        metadata.candidate_spent = spent;
+        metadata.confirmed_spent_height = source.read_4_bytes_little_endian();
     }
 
     value_ = source.read_8_bytes_little_endian();
@@ -218,14 +218,14 @@ void output::to_data(writer& sink, bool wire, bool) const
 {
     if (!wire)
     {
-        const auto spent = metadata.candidate_spend ?
-            output::validation::candidate_spent :
-            output::validation::candidate_unspent;
+        const auto spent = metadata.candidate_spent ?
+            output::validation::candidate_spent_true :
+            output::validation::candidate_spent_false;
 
         // These writes are only utilized for unreachable tx serialization.
         // Later updates and usable reads must be externally protected.
         sink.write_byte(spent);
-        sink.write_4_bytes_little_endian(metadata.confirmed_spend_height);
+        sink.write_4_bytes_little_endian(metadata.confirmed_spent_height);
     }
 
     sink.write_8_bytes_little_endian(value_);
@@ -355,4 +355,5 @@ bool output::extract_committed_hash(hash_digest& out) const
 }
 
 } // namespace chain
+} // namespace system
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/utility/thread.hpp>
+#include <bitcoin/system/utility/thread.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -41,8 +41,9 @@
 #endif
 
 namespace libbitcoin {
+namespace system {
 
-// Privately map the class enum thread priority value to an interger.
+// Privately map the class enum thread priority value to an integer.
 static int get_priority(thread_priority priority)
 {
     switch (priority)
@@ -60,7 +61,7 @@ static int get_priority(thread_priority priority)
     }
 }
 
-// Set the thread priority (or process if thread priority is not avaliable).
+// Set the thread priority (or process if thread priority is not available).
 void set_priority(thread_priority priority)
 {
     const auto prioritization = get_priority(priority);
@@ -120,4 +121,5 @@ size_t thread_floor(size_t configured)
     return std::max(configured, cores());
 }
 
+} // namespace system
 } // namespace libbitcoin

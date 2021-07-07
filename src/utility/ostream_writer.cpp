@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,16 +16,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 #include <algorithm>
 #include <iostream>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/utility/endian.hpp>
-#include <bitcoin/bitcoin/utility/reader.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/utility/endian.hpp>
+#include <bitcoin/system/utility/reader.hpp>
 
 namespace libbitcoin {
+namespace system {
 
 ostream_writer::ostream_writer(std::ostream& stream)
   : stream_(stream)
@@ -163,12 +164,18 @@ void ostream_writer::write_size_little_endian(size_t value)
 // Bytes.
 //-----------------------------------------------------------------------------
 
+void ostream_writer::write(reader& in)
+{
+    while (!in.is_exhausted())
+        write_byte(in.read_byte());
+}
+
 void ostream_writer::write_byte(uint8_t value)
 {
     stream_.put(value);
 }
 
-void ostream_writer::write_bytes(const data_slice data)
+void ostream_writer::write_bytes(const data_slice& data)
 {
     const auto size = data.size();
 
@@ -202,4 +209,5 @@ void ostream_writer::skip(size_t size)
     stream_.seekp(size, std::ios_base::cur);
 }
 
+} // namespace system
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,13 +16,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/math/checksum.hpp>
+#include <bitcoin/system/math/checksum.hpp>
 
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/utility/endian.hpp>
-#include <bitcoin/bitcoin/utility/deserializer.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/utility/endian.hpp>
+#include <bitcoin/system/utility/deserializer.hpp>
 
 namespace libbitcoin {
+namespace system {
 
 void append_checksum(data_chunk& data)
 {
@@ -30,23 +31,23 @@ void append_checksum(data_chunk& data)
     extend_data(data, to_little_endian(checksum));
 }
 
-uint32_t bitcoin_checksum(data_slice data)
+uint32_t bitcoin_checksum(const data_slice& data)
 {
     const auto hash = bitcoin_hash(data);
     return from_little_endian_unsafe<uint32_t>(hash.begin());
 }
 
-bool verify_checksum(data_slice data)
+bool verify_checksum(const data_slice& data)
 {
     if (data.size() < checksum_size)
         return false;
 
     // TODO: create a bitcoin_checksum overload that can accept begin/end.
     const auto checksum_begin = data.end() - checksum_size;
-    data_slice slice(data.begin(), checksum_begin);
     auto checksum = from_little_endian_unsafe<uint32_t>(checksum_begin);
-    return bitcoin_checksum(slice) == checksum;
+    return bitcoin_checksum({ data.begin(), checksum_begin }) == checksum;
 }
 
+} // namespace system
 } // namespace libbitcoin
 

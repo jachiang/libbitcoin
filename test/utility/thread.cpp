@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,7 +19,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <stdexcept>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 #ifdef _MSC_VER
     #include <windows.h>
@@ -37,13 +37,13 @@
     #define THREAD_PRIORITY_LOWEST PRIO_MAX
 #endif
 
-using namespace bc;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(thread_tests)
 
 static int get_thread_priority_test()
 {
-#if defined(_WIN32)
+#if defined(_MSC_VER)
     return GetThreadPriority(GetCurrentThread());
 #elif defined(PRIO_THREAD)
     return getpriority(PRIO_LWP, pthread_self());
@@ -54,7 +54,7 @@ static int get_thread_priority_test()
 
 void set_thread_priority_test(int priority)
 {
-#if defined(_WIN32)
+#if defined(_MSC_VER)
     SetThreadPriority(GetCurrentThread(), priority);
 #elif defined(PRIO_THREAD)
     setpriority(PRIO_THREAD, pthread_self(), priority);

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,16 +16,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/message.hpp>
+#include <bitcoin/system/wallet/message.hpp>
 
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
-#include <bitcoin/bitcoin/wallet/ec_private.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
+#include <bitcoin/system/wallet/ec_private.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 
 static constexpr uint8_t max_recovery_id = 3;
@@ -35,7 +36,7 @@ static constexpr uint8_t magic_differential = magic_compressed - magic_uncompres
 static_assert(magic_differential > max_recovery_id, "oops!");
 static_assert(max_uint8 - max_recovery_id >= magic_uncompressed, "oops!");
 
-hash_digest hash_message(data_slice message)
+hash_digest hash_message(const data_slice& message)
 {
     // This is a specified magic prefix.
     static const std::string prefix("Bitcoin Signed Message:\n");
@@ -112,21 +113,21 @@ bool magic_to_recovery_id(uint8_t& out_recovery_id, bool& out_compressed,
     return true;
 }
 
-bool sign_message(message_signature& signature, data_slice message,
+bool sign_message(message_signature& out_signature, const data_slice& message,
     const ec_private& secret)
 {
-    return sign_message(signature, message, secret, secret.compressed());
+    return sign_message(out_signature, message, secret, secret.compressed());
 }
 
-bool sign_message(message_signature& signature, data_slice message,
+bool sign_message(message_signature& out_signature, const data_slice& message,
     const std::string& wif)
 {
     ec_private secret(wif);
     return (secret &&
-        sign_message(signature, message, secret, secret.compressed()));
+        sign_message(out_signature, message, secret, secret.compressed()));
 }
 
-bool sign_message(message_signature& signature, data_slice message,
+bool sign_message(message_signature& out_signature, const data_slice& message,
     const ec_secret& secret, bool compressed)
 {
     recoverable_signature recoverable;
@@ -137,11 +138,11 @@ bool sign_message(message_signature& signature, data_slice message,
     if (!recovery_id_to_magic(magic, recoverable.recovery_id, compressed))
         return false;
 
-    signature = splice(to_array(magic), recoverable.signature);
+    out_signature = splice(to_array(magic), recoverable.signature);
     return true;
 }
 
-bool verify_message(data_slice message, const payment_address& address,
+bool verify_message(const data_slice& message, const payment_address& address,
     const message_signature& signature)
 {
     const auto magic = signature.front();
@@ -159,4 +160,5 @@ bool verify_message(data_slice message, const payment_address& address,
 }
 
 } // namespace wallet
+} // namespace system
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,7 +18,7 @@
  */
 #include <boost/test/unit_test.hpp>
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 // TODO: test sender in isolation.
 BOOST_AUTO_TEST_SUITE(stealth_sender_tests)

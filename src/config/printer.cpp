@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,20 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/config/printer.hpp>
+#include <bitcoin/system/config/printer.hpp>
 
-#include <algorithm>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/config/parameter.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/collection.hpp>
-#include <bitcoin/bitcoin/utility/string.hpp>
+#include <bitcoin/system/config/parameter.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/collection.hpp>
+#include <bitcoin/system/utility/string.hpp>
 
 // We built this because po::options_description.print() sucks.
 
@@ -65,11 +63,15 @@
 #define BC_PRINTER_SETTING_REQUIRED_FORMAT "%1% = %2%\n"
 
 namespace po = boost::program_options;
-using namespace libbitcoin;
-using namespace libbitcoin::config;
+using namespace libbitcoin::system;
+using namespace libbitcoin::system::config;
 using boost::format;
 
 const int printer::max_arguments = 256;
+
+printer::~printer()
+{
+}
 
 printer::printer(const po::options_description& options,
     const po::positional_options_description& arguments,
@@ -130,24 +132,24 @@ static std::string format_row_name(const parameter& value)
     // This is a problem when composing with a command-line argument that
     // wants to be upper case but must match in case with the env var option.
 
-    if (value.get_position() != parameter::not_positional)
+    if (value.position() != parameter::not_positional)
         return (format(BC_PRINTER_TABLE_ARGUMENT_FORMAT) %
-            boost::to_upper_copy(value.get_long_name())).str();
-    else if (value.get_short_name() == parameter::no_short_name)
+            boost::to_upper_copy(value.long_name())).str();
+    else if (value.short_name() == parameter::no_short_name)
         return (format(BC_PRINTER_TABLE_OPTION_LONG_FORMAT) %
-            value.get_long_name()).str();
-    else if (value.get_long_name().empty())
+            value.long_name()).str();
+    else if (value.long_name().empty())
         return (format(BC_PRINTER_TABLE_OPTION_SHORT_FORMAT) %
-            value.get_short_name()).str();
+            value.short_name()).str();
     else
         return (format(BC_PRINTER_TABLE_OPTION_FORMAT) %
-            value.get_short_name() % value.get_long_name()).str();
+            value.short_name() % value.long_name()).str();
 }
 
 // 100% component tested.
 static bool match_positional(bool positional, const parameter& value)
 {
-    auto positioned = value.get_position() != parameter::not_positional;
+    auto positioned = value.position() != parameter::not_positional;
     return positioned == positional;
 }
 
@@ -170,7 +172,7 @@ std::string printer::format_parameters_table(bool positional)
         auto name = format_row_name(parameter);
 
         // Build a column for the description.
-        const auto rows = columnize(parameter.get_description(), 52);
+        const auto rows = columnize(parameter.description(), 52);
 
         // If there is no description the command is not output!
         for (const auto& row: rows)
@@ -203,12 +205,12 @@ std::string printer::format_paragraph(const std::string& paragraph)
 static std::string format_setting(const parameter& value,
     const std::string& name)
 {
-    // A required argument may only be preceeded by required arguments.
+    // A required argument may only be preceded by required arguments.
     // Requiredness may be in error if the metadata is inconsistent.
-    auto required = value.get_required();
+    auto required = value.required();
 
     // In terms of formatting we also treat multivalued as not required.
-    auto optional = value.get_args_limit() == 1;
+    auto optional = value.args_limit() == 1;
 
     std::string formatter;
     if (required)
@@ -225,7 +227,7 @@ static std::string format_setting(const parameter& value,
 static void split_setting_name(const parameter& value, std::string& name,
     std::string& section)
 {
-    const auto tokens = split(value.get_long_name(), ".");
+    const auto tokens = split(value.long_name(), ".");
     if (tokens.size() != 2)
     {
         section.clear();
@@ -265,7 +267,8 @@ std::string printer::format_settings_table()
         }
 
         output << format(BC_PRINTER_SETTING_COMMENT_FORMAT) %
-            parameter.get_description();
+            parameter.description();
+
         output << format_setting(parameter, name);
     }
 
@@ -276,8 +279,8 @@ std::string printer::format_usage()
 {
     // USAGE: bx COMMAND [-hvt] -n VALUE [-m VALUE] [-w VALUE]... REQUIRED
     // [OPTIONAL] [MULTIPLE]...
-    auto usage = format(BC_PRINTER_USAGE_FORMAT) % get_application() %
-        get_command() % format_usage_parameters();
+    const auto usage = format(BC_PRINTER_USAGE_FORMAT) % application() %
+        command() % format_usage_parameters();
 
     return format_paragraph(usage.str());
 }
@@ -285,9 +288,10 @@ std::string printer::format_usage()
 std::string printer::format_description()
 {
     // Info: %1%
-    auto description = format(BC_PRINTER_DESCRIPTION_FORMAT) %
-        get_description();
-    return format_paragraph(description.str());
+    const auto described = format(BC_PRINTER_DESCRIPTION_FORMAT) %
+        description();
+
+    return format_paragraph(described.str());
 }
 
 // 100% component tested.
@@ -306,28 +310,28 @@ std::string printer::format_usage_parameters()
 
     for (const auto& parameter: parameters)
     {
-        // A required argument may only be preceeded by required arguments.
+        // A required argument may only be preceded by required arguments.
         // Requiredness may be in error if the metadata is inconsistent.
-        auto required = parameter.get_required();
+        const auto required = parameter.required();
 
         // Options are named and args are positional.
-        auto option = parameter.get_position() == parameter::not_positional;
+        const auto option = parameter.position() == parameter::not_positional;
 
         // In terms of formatting we also treat multivalued as not required.
-        auto optional = parameter.get_args_limit() == 1;
+        const auto optional = parameter.args_limit() == 1;
 
         // This will capture only options set to zero_tokens().
-        auto toggle = parameter.get_args_limit() == 0;
+        const auto toggle = parameter.args_limit() == 0;
 
         // A toggle with a short name gets mashed up in group.
-        auto is_short = parameter.get_short_name() != parameter::no_short_name;
+        const auto is_short = parameter.short_name() != parameter::no_short_name;
 
-        const auto& long_name = parameter.get_long_name();
+        const auto& long_name = parameter.long_name();
 
         if (toggle)
         {
             if (is_short)
-                toggle_short_options.push_back(parameter.get_short_name());
+                toggle_short_options.push_back(parameter.short_name());
             else
                 toggle_long_options.push_back(long_name);
         }
@@ -409,11 +413,11 @@ static void enqueue_name(int count, std::string& name, argument_list& names)
 void printer::generate_argument_names()
 {
     // Member values
-    const auto& arguments = get_arguments();
+    const auto& args = arguments();
     auto& argument_names = get_argument_names();
 
     argument_names.clear();
-    const auto max_total_arguments = arguments.max_total_count();
+    const auto max_total_arguments = args.max_total_count();
 
     // Temporary values
     std::string argument_name;
@@ -424,7 +428,7 @@ void printer::generate_argument_names()
     for (unsigned int position = 0; position < max_total_arguments &&
         max_previous_argument <= max_arguments; ++position)
     {
-        argument_name = arguments.name_for_position(position);
+        argument_name = args.name_for_position(position);
 
         // Initialize the first name as having a zeroth instance.
         if (max_previous_argument == 0)
@@ -451,25 +455,25 @@ void printer::generate_argument_names()
 // 100% component tested.
 static bool compare_parameters(const parameter left, const parameter right)
 {
-    return left.get_format_name() < right.get_format_name();
+    return left.format_name() < right.format_name();
 }
 
 // 100% component tested.
 void printer::generate_parameters()
 {
     const auto& argument_names = get_argument_names();
-    const auto& options = get_options();
+    const auto& opts = options();
     auto& parameters = get_parameters();
 
     parameters.clear();
 
     parameter param;
-    for (auto option_ptr: options.options())
+    for (auto option_ptr: opts.options())
     {
         param.initialize(*option_ptr, argument_names);
 
-        // Sort non-positonal parameters (i.e. options).
-        if (param.get_position() == parameter::not_positional)
+        // Sort non-positional parameters (i.e. options).
+        if (param.position() == parameter::not_positional)
             insert_sorted(parameters, param, compare_parameters);
         else
             parameters.push_back(param);

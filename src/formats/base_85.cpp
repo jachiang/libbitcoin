@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -46,15 +46,16 @@
 //  DEALINGS IN THE SOFTWARE.
 //  --------------------------------------------------------------------------
 
-#include <bitcoin/bitcoin/formats/base_85.hpp>
+#include <bitcoin/system/formats/base_85.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/data.hpp>
 
 namespace libbitcoin {
+namespace system {
 
 // Maps binary to base 85.
 static char encoder[85 + 1] =
@@ -88,9 +89,9 @@ static uint8_t decoder[96] =
 };
 
 // Accepts only byte arrays bounded to 4 bytes.
-bool encode_base85(std::string& out, data_slice in)
+bool encode_base85(std::string& out, const data_slice& in)
 {
-    const size_t size = in.size();
+    const auto size = in.size();
     if (size % 4 != 0)
         return false;
 
@@ -151,4 +152,5 @@ bool decode_base85(data_chunk& out, const std::string& in)
     return true;
 }
 
+} // namespace system
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,9 +16,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/electrum_dictionary.hpp>
+#include <bitcoin/system/wallet/electrum_dictionary.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 namespace language {
 namespace electrum {
@@ -1658,4 +1659,5 @@ const dictionary_v1 en_v1 =
 } // namespace electrum
 } // namespace language
 } // namespace wallet
+} // namespace system
 } // namespace libbitcoin

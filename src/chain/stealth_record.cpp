@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,25 +16,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/chain/stealth_record.hpp>
+#include <bitcoin/system/chain/stealth_record.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <istream>
 #include <utility>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/utility/binary.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/utility/binary.hpp>
+#include <bitcoin/system/utility/data.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace chain {
 
-// The sign byte of the ephmemeral key is fixed (0x02) by convention.
+// The sign byte of the ephemeral key is fixed (0x02) by convention.
 static const auto sign = to_array(ec_even_sign);
 
 // Constructors.
@@ -317,7 +318,7 @@ uint32_t stealth_record::prefix() const
     return prefix_;
 }
 
-// Restore the default sign byte to the ephermal key as a convenience.
+// Restore the default sign byte to the ephemeral key as a convenience.
 ec_compressed stealth_record::ephemeral_public_key() const
 {
     return splice(sign, unsigned_ephemeral_);
@@ -341,4 +342,5 @@ const hash_digest& stealth_record::transaction_hash() const
 }
 
 } // namespace chain
+} // namespace system
 } // namespace libbitcoin

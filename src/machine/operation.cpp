@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,22 +16,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/machine/operation.hpp>
+#include <bitcoin/system/machine/operation.hpp>
 
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin/formats/base_16.hpp>
-#include <bitcoin/bitcoin/machine/opcode.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
-#include <bitcoin/bitcoin/utility/string.hpp>
+#include <bitcoin/system/formats/base_16.hpp>
+#include <bitcoin/system/machine/opcode.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/data.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
+#include <bitcoin/system/utility/string.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace machine {
 
 // Deserialization.
@@ -156,18 +157,15 @@ static bool opcode_from_data_prefix(opcode& out_code,
 static bool data_from_number_token(data_chunk& out_data,
     const std::string& token)
 {
-    try
-    {
-        out_data = number(boost::lexical_cast<int64_t>(token)).data();
-        return true;
-    }
-    catch (const boost::bad_lexical_cast&)
-    {
+    int64_t value;
+    if (!deserialize(value, token, false))
         return false;
-    }
+
+    out_data = number(value).data();
+    return true;
 }
 
-// The removal of spaces in v3 data is a compatability break with our v2.
+// The removal of spaces in v3 data is a compatibility break with our v2.
 bool operation::from_string(const std::string& mnemonic)
 {
     reset();
@@ -297,7 +295,7 @@ static std::string opcode_to_prefix(opcode code, const data_chunk& data)
     }
 }
 
-// The removal of spaces in v3 data is a compatability break with our v2.
+// The removal of spaces in v3 data is a compatibility break with our v2.
 std::string operation::to_string(uint32_t active_forks) const
 {
     if (!valid_)
@@ -311,4 +309,5 @@ std::string operation::to_string(uint32_t active_forks) const
 }
 
 } // namespace machine
+} // namespace system
 } // namespace libbitcoin

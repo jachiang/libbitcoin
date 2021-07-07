@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/payment_address.hpp>
+#include <bitcoin/system/wallet/payment_address.hpp>
 
 #include <algorithm>
 #include <cstdint>
@@ -24,17 +24,18 @@
 #include <string>
 #include <utility>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/formats/base_58.hpp>
-#include <bitcoin/bitcoin/math/checksum.hpp>
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/wallet/ec_private.hpp>
-#include <bitcoin/bitcoin/wallet/ec_public.hpp>
+#include <bitcoin/system/formats/base_58.hpp>
+#include <bitcoin/system/math/checksum.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/wallet/ec_private.hpp>
+#include <bitcoin/system/wallet/ec_public.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 
-using namespace bc::machine;
+using namespace bc::system::machine;
 
 const uint8_t payment_address::mainnet_p2kh = 0x00;
 const uint8_t payment_address::mainnet_p2sh = 0x05;
@@ -96,7 +97,7 @@ payment_address::payment_address(const short_hash& hash, uint8_t version)
 // Validators.
 // ----------------------------------------------------------------------------
 
-bool payment_address::is_address(data_slice decoded)
+bool payment_address::is_address(const data_slice& decoded)
 {
     return (decoded.size() == payment_size) && verify_checksum(decoded);
 }
@@ -183,6 +184,22 @@ uint8_t payment_address::version() const
 const short_hash& payment_address::hash() const
 {
     return hash_;
+}
+
+chain::script payment_address::output_script() const
+{
+    switch (version_)
+    {
+        case 0:
+        case 111:
+            return chain::script::to_pay_key_hash_pattern(hash_);
+
+        case 5:
+        case 196:
+            return chain::script::to_pay_script_hash_pattern(hash_);
+    }
+
+    return {};
 }
 
 // Methods.
@@ -345,4 +362,5 @@ payment_address::list payment_address::extract_output(
 }
 
 } // namespace wallet
+} // namespace system
 } // namespace libbitcoin

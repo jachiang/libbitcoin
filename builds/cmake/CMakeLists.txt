@@ -1,15 +1,15 @@
 ###############################################################################
-#  Copyright (c) 2014-2018 libbitcoin developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-system developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
 ###############################################################################
 
-# libbitcoin project configuration.
+# libbitcoin-system project configuration.
 #------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
-project(libbitcoin LANGUAGES C CXX)
+project(libbitcoin-system LANGUAGES C CXX)
 
 enable_testing()
 
@@ -20,9 +20,9 @@ include(CheckSymbolExists)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if (MSVC)
-  set( CANONICAL_LIB_NAME libbitcoin )
+  set( CANONICAL_LIB_NAME libbitcoin-system )
 else ()
-  set( CANONICAL_LIB_NAME bitcoin )
+  set( CANONICAL_LIB_NAME bitcoin-system )
   find_package( PkgConfig REQUIRED )
 
   set( prefix "${CMAKE_PREFIX_PATH}" )
@@ -42,17 +42,8 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 # Warn on all stuff.
 add_compile_options( "-Wall" )
 
-# Warn on all stuff.
-add_compile_options( "-Wall" )
-
 # Warn on extra stuff.
 add_compile_options( "-Wextra" )
-
-# Warn on extra stuff.
-add_compile_options( "-Wextra" )
-
-# Be really annoying.
-add_compile_options( "-Wpedantic" )
 
 # Be really annoying.
 add_compile_options( "-Wpedantic" )
@@ -106,22 +97,6 @@ if (with-icu)
     set( icu "-DWITH_ICU" )
 endif()
 
-# Implement -Dwith-png and output ${png}.
-#------------------------------------------------------------------------------
-set( with-png "no" CACHE BOOL "Compile with Libpng support." )
-
-if (with-png)
-    set( png "-DWITH_PNG" )
-endif()
-
-# Implement -Dwith-qrencode and output ${qrencode}.
-#------------------------------------------------------------------------------
-set( with-qrencode "no" CACHE BOOL "Compile with QREncode." )
-
-if (with-qrencode)
-    set( qrencode "-DWITH_QRENCODE" )
-endif()
-
 # Implement -Denable-ndebug and define NDEBUG.
 #------------------------------------------------------------------------------
 set( enable-ndebug "yes" CACHE BOOL "Compile without debug assertions." )
@@ -138,7 +113,7 @@ endif()
 
 # Find boost
 #------------------------------------------------------------------------------
-find_package( Boost 1.62.0 REQUIRED COMPONENTS
+find_package( Boost 1.72.0 REQUIRED COMPONENTS
     atomic
     chrono
     date_time
@@ -201,7 +176,7 @@ endif()
 # Find icu-i18n
 #------------------------------------------------------------------------------
 if (with-icu)
-    find_package( Icu-I18N 51.2 REQUIRED )
+    find_package( Icu-I18N 55.2 REQUIRED )
 endif()
 
 # Find dl
@@ -210,21 +185,9 @@ if ((${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
     find_package( Dl REQUIRED )
 endif()
 
-# Find png
-#------------------------------------------------------------------------------
-if (with-png)
-    find_package( Png 1.6.29 REQUIRED )
-endif()
-
-# Find qrencode
-#------------------------------------------------------------------------------
-if (with-qrencode)
-    find_package( Qrencode 3.4.4 REQUIRED )
-endif()
-
 # Find secp256k1
 #------------------------------------------------------------------------------
-find_package( Secp256K1 0.0.1 REQUIRED )
+find_package( Secp256K1 0.1.0.19 REQUIRED )
 
 # Define project common includes directories
 #------------------------------------------------------------------------------
@@ -235,8 +198,6 @@ if (BUILD_SHARED_LIBS)
         ${rt_INCLUDE_DIRS}
         ${icu_i18n_INCLUDE_DIRS}
         ${dl_INCLUDE_DIRS}
-        ${png_INCLUDE_DIRS}
-        ${qrencode_INCLUDE_DIRS}
         ${secp256k1_INCLUDE_DIRS} )
 else()
     include_directories( SYSTEM
@@ -245,39 +206,33 @@ else()
         ${rt_INCLUDE_DIRS}
         ${icu_i18n_STATIC_INCLUDE_DIRS}
         ${dl_INCLUDE_DIRS}
-        ${png_STATIC_INCLUDE_DIRS}
-        ${qrencode_STATIC_INCLUDE_DIRS}
         ${secp256k1_STATIC_INCLUDE_DIRS} )
 endif()
 
 # Define project common library directories
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    link_directories( 
+    link_directories(
         ${Boost_LIBRARY_DIRS}
         ${pthread_LIBRARY_DIRS}
         ${rt_LIBRARY_DIRS}
         ${icu_i18n_LIBRARY_DIRS}
         ${dl_LIBRARY_DIRS}
-        ${png_LIBRARY_DIRS}
-        ${qrencode_LIBRARY_DIRS}
         ${secp256k1_LIBRARY_DIRS} )
 else()
-    link_directories( 
+    link_directories(
         ${Boost_LIBRARY_DIRS}
         ${pthread_LIBRARY_DIRS}
         ${rt_LIBRARY_DIRS}
         ${icu_i18n_STATIC_LIBRARY_DIRS}
         ${dl_LIBRARY_DIRS}
-        ${png_STATIC_LIBRARY_DIRS}
-        ${qrencode_STATIC_LIBRARY_DIRS}
         ${secp256k1_STATIC_LIBRARY_DIRS} )
 endif()
 
 # Define project common libraries/linker flags.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    link_libraries( 
+    link_libraries(
         "-fstack-protector"
         "-fstack-protector-all"
         ${Boost_CHRONO_LIBRARY}
@@ -294,11 +249,9 @@ if (BUILD_SHARED_LIBS)
         ${rt_LIBRARIES}
         ${icu_i18n_LIBRARIES}
         ${dl_LIBRARIES}
-        ${png_LIBRARIES}
-        ${qrencode_LIBRARIES}
         ${secp256k1_LIBRARIES} )
 else()
-    link_libraries( 
+    link_libraries(
         "-fstack-protector"
         "-fstack-protector-all"
         ${Boost_CHRONO_LIBRARY}
@@ -315,15 +268,11 @@ else()
         ${rt_LIBRARIES}
         ${icu_i18n_STATIC_LIBRARIES}
         ${dl_LIBRARIES}
-        ${png_STATIC_LIBRARIES}
-        ${qrencode_STATIC_LIBRARIES}
         ${secp256k1_STATIC_LIBRARIES} )
 endif()
 
-add_definitions( 
-    ${icu}
-    ${png}
-    ${qrencode} )
+add_definitions(
+    ${icu} )
 
 # Define ${CANONICAL_LIB_NAME} project.
 #------------------------------------------------------------------------------
@@ -331,6 +280,7 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/error.cpp"
     "../../src/settings.cpp"
     "../../src/chain/block.cpp"
+    "../../src/chain/block_filter.cpp"
     "../../src/chain/chain_state.cpp"
     "../../src/chain/compact.cpp"
     "../../src/chain/header.cpp"
@@ -352,6 +302,7 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/config/base64.cpp"
     "../../src/config/block.cpp"
     "../../src/config/checkpoint.cpp"
+    "../../src/config/compact_filter.cpp"
     "../../src/config/directory.cpp"
     "../../src/config/endpoint.cpp"
     "../../src/config/hash160.cpp"
@@ -388,10 +339,12 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/math/ec_point.cpp"
     "../../src/math/ec_scalar.cpp"
     "../../src/math/elliptic_curve.cpp"
+    "../../src/math/golomb_coded_sets.cpp"
     "../../src/math/hash.cpp"
     "../../src/math/ring_signature.cpp"
     "../../src/math/secp256k1_initializer.cpp"
     "../../src/math/secp256k1_initializer.hpp"
+    "../../src/math/siphash.cpp"
     "../../src/math/stealth.cpp"
     "../../src/math/external/aes256.c"
     "../../src/math/external/aes256.h"
@@ -423,6 +376,9 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/message/block.cpp"
     "../../src/message/block_transactions.cpp"
     "../../src/message/compact_block.cpp"
+    "../../src/message/compact_filter.cpp"
+    "../../src/message/compact_filter_checkpoint.cpp"
+    "../../src/message/compact_filter_headers.cpp"
     "../../src/message/fee_filter.cpp"
     "../../src/message/filter_add.cpp"
     "../../src/message/filter_clear.cpp"
@@ -430,6 +386,9 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/message/get_address.cpp"
     "../../src/message/get_block_transactions.cpp"
     "../../src/message/get_blocks.cpp"
+    "../../src/message/get_compact_filter_checkpoint.cpp"
+    "../../src/message/get_compact_filter_headers.cpp"
+    "../../src/message/get_compact_filters.cpp"
     "../../src/message/get_data.cpp"
     "../../src/message/get_headers.cpp"
     "../../src/message/header.cpp"
@@ -464,10 +423,12 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/utility/dispatcher.cpp"
     "../../src/utility/flush_lock.cpp"
     "../../src/utility/interprocess_lock.cpp"
+    "../../src/utility/istream_bit_reader.cpp"
     "../../src/utility/istream_reader.cpp"
     "../../src/utility/monitor.cpp"
+    "../../src/utility/neutrino_filter.cpp"
+    "../../src/utility/ostream_bit_writer.cpp"
     "../../src/utility/ostream_writer.cpp"
-    "../../src/utility/png.cpp"
     "../../src/utility/prioritized_mutex.cpp"
     "../../src/utility/property_tree.cpp"
     "../../src/utility/pseudo_random.cpp"
@@ -478,9 +439,17 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/utility/string.cpp"
     "../../src/utility/thread.cpp"
     "../../src/utility/threadpool.cpp"
+    "../../src/utility/tiff.cpp"
     "../../src/utility/work.cpp"
     "../../src/wallet/bitcoin_uri.cpp"
-    "../../src/wallet/dictionary.cpp"
+    "../../src/wallet/dictionary_en.cpp"
+    "../../src/wallet/dictionary_es.cpp"
+    "../../src/wallet/dictionary_fr.cpp"
+    "../../src/wallet/dictionary_it.cpp"
+    "../../src/wallet/dictionary_ja.cpp"
+    "../../src/wallet/dictionary_ko.cpp"
+    "../../src/wallet/dictionary_zh_Hans.cpp"
+    "../../src/wallet/dictionary_zh_Hant.cpp"
     "../../src/wallet/ec_private.cpp"
     "../../src/wallet/ec_public.cpp"
     "../../src/wallet/ek_private.cpp"
@@ -488,6 +457,11 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/wallet/ek_token.cpp"
     "../../src/wallet/electrum.cpp"
     "../../src/wallet/electrum_dictionary.cpp"
+    "../../src/wallet/electrum_dictionary_en.cpp"
+    "../../src/wallet/electrum_dictionary_es.cpp"
+    "../../src/wallet/electrum_dictionary_ja.cpp"
+    "../../src/wallet/electrum_dictionary_pt.cpp"
+    "../../src/wallet/electrum_dictionary_zh_Hans.cpp"
     "../../src/wallet/encrypted_keys.cpp"
     "../../src/wallet/hd_private.cpp"
     "../../src/wallet/hd_public.cpp"
@@ -495,12 +469,13 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/wallet/mini_keys.cpp"
     "../../src/wallet/mnemonic.cpp"
     "../../src/wallet/payment_address.cpp"
-    "../../src/wallet/qrcode.cpp"
+    "../../src/wallet/qr_code.cpp"
     "../../src/wallet/select_outputs.cpp"
     "../../src/wallet/stealth_address.cpp"
     "../../src/wallet/stealth_receiver.cpp"
     "../../src/wallet/stealth_sender.cpp"
     "../../src/wallet/uri.cpp"
+    "../../src/wallet/witness_address.cpp"
     "../../src/wallet/parse_encrypted_keys/parse_encrypted_key.hpp"
     "../../src/wallet/parse_encrypted_keys/parse_encrypted_key.ipp"
     "../../src/wallet/parse_encrypted_keys/parse_encrypted_prefix.hpp"
@@ -510,7 +485,26 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/wallet/parse_encrypted_keys/parse_encrypted_public.cpp"
     "../../src/wallet/parse_encrypted_keys/parse_encrypted_public.hpp"
     "../../src/wallet/parse_encrypted_keys/parse_encrypted_token.cpp"
-    "../../src/wallet/parse_encrypted_keys/parse_encrypted_token.hpp" )
+    "../../src/wallet/parse_encrypted_keys/parse_encrypted_token.hpp"
+    "../../src/wallet/qrencode/bitstream.c"
+    "../../src/wallet/qrencode/bitstream.h"
+    "../../src/wallet/qrencode/mask.c"
+    "../../src/wallet/qrencode/mask.h"
+    "../../src/wallet/qrencode/mmask.c"
+    "../../src/wallet/qrencode/mmask.h"
+    "../../src/wallet/qrencode/mqrspec.c"
+    "../../src/wallet/qrencode/mqrspec.h"
+    "../../src/wallet/qrencode/qrencode.c"
+    "../../src/wallet/qrencode/qrencode.h"
+    "../../src/wallet/qrencode/qrencode_inner.h"
+    "../../src/wallet/qrencode/qrinput.c"
+    "../../src/wallet/qrencode/qrinput.h"
+    "../../src/wallet/qrencode/qrspec.c"
+    "../../src/wallet/qrencode/qrspec.h"
+    "../../src/wallet/qrencode/rsecc.c"
+    "../../src/wallet/qrencode/rsecc.h"
+    "../../src/wallet/qrencode/split.c"
+    "../../src/wallet/qrencode/split.h" )
 
 # ${CANONICAL_LIB_NAME} project specific include directories.
 #------------------------------------------------------------------------------
@@ -522,8 +516,6 @@ if (BUILD_SHARED_LIBS)
         ${rt_INCLUDE_DIRS}
         ${icu_i18n_INCLUDE_DIRS}
         ${dl_INCLUDE_DIRS}
-        ${png_INCLUDE_DIRS}
-        ${qrencode_INCLUDE_DIRS}
         ${secp256k1_INCLUDE_DIRS} )
 else()
     target_include_directories( ${CANONICAL_LIB_NAME} PRIVATE
@@ -533,8 +525,6 @@ else()
         ${rt_INCLUDE_DIRS}
         ${icu_i18n_STATIC_INCLUDE_DIRS}
         ${dl_INCLUDE_DIRS}
-        ${png_STATIC_INCLUDE_DIRS}
-        ${qrencode_STATIC_INCLUDE_DIRS}
         ${secp256k1_STATIC_INCLUDE_DIRS} )
 endif()
 
@@ -559,8 +549,6 @@ if (BUILD_SHARED_LIBS)
         ${rt_LIBRARIES}
         ${icu_i18n_LIBRARIES}
         ${dl_LIBRARIES}
-        ${png_LIBRARIES}
-        ${qrencode_LIBRARIES}
         ${secp256k1_LIBRARIES} )
 else()
     target_link_libraries( ${CANONICAL_LIB_NAME}
@@ -578,37 +566,37 @@ else()
         ${rt_LIBRARIES}
         ${icu_i18n_STATIC_LIBRARIES}
         ${dl_LIBRARIES}
-        ${png_STATIC_LIBRARIES}
-        ${qrencode_STATIC_LIBRARIES}
         ${secp256k1_STATIC_LIBRARIES} )
 endif()
 
-# Define libbitcoin-examples project.
+# Define libbitcoin-system-examples project.
 #------------------------------------------------------------------------------
 if (with-examples)
-    add_executable( libbitcoin-examples
+    add_executable( libbitcoin-system-examples
         "../../examples/main.cpp" )
 
-#     libbitcoin-examples project specific include directories.
+#     libbitcoin-system-examples project specific include directories.
 #------------------------------------------------------------------------------
-    target_include_directories( libbitcoin-examples PRIVATE
+    target_include_directories( libbitcoin-system-examples PRIVATE
         "../../include" )
 
-#     libbitcoin-examples project specific libraries/linker flags.
+#     libbitcoin-system-examples project specific libraries/linker flags.
 #------------------------------------------------------------------------------
-    target_link_libraries( libbitcoin-examples
+    target_link_libraries( libbitcoin-system-examples
         ${CANONICAL_LIB_NAME} )
 
 endif()
 
-# Define libbitcoin-test project.
+# Define libbitcoin-system-test project.
 #------------------------------------------------------------------------------
 if (with-tests)
-    add_executable( libbitcoin-test
-        "../../test/.gitignore"
+    add_executable( libbitcoin-system-test
         "../../test/main.cpp"
+        "../../test/overloads.cpp"
+        "../../test/overloads.hpp"
         "../../test/settings.cpp"
         "../../test/chain/block.cpp"
+        "../../test/chain/block_filter.cpp"
         "../../test/chain/chain_state.cpp"
         "../../test/chain/compact.cpp"
         "../../test/chain/header.cpp"
@@ -628,6 +616,7 @@ if (with-tests)
         "../../test/config/base58.cpp"
         "../../test/config/block.cpp"
         "../../test/config/checkpoint.cpp"
+        "../../test/config/compact_filter.cpp"
         "../../test/config/endpoint.cpp"
         "../../test/config/hash256.cpp"
         "../../test/config/parameter.cpp"
@@ -650,6 +639,8 @@ if (with-tests)
         "../../test/math/hash.hpp"
         "../../test/math/limits.cpp"
         "../../test/math/ring_signature.cpp"
+        "../../test/math/siphash.cpp"
+        "../../test/math/siphash.hpp"
         "../../test/math/stealth.cpp"
         "../../test/math/uint256.cpp"
         "../../test/message/address.cpp"
@@ -658,6 +649,9 @@ if (with-tests)
         "../../test/message/block.cpp"
         "../../test/message/block_transactions.cpp"
         "../../test/message/compact_block.cpp"
+        "../../test/message/compact_filter.cpp"
+        "../../test/message/compact_filter_checkpoint.cpp"
+        "../../test/message/compact_filter_headers.cpp"
         "../../test/message/fee_filter.cpp"
         "../../test/message/filter_add.cpp"
         "../../test/message/filter_clear.cpp"
@@ -665,6 +659,9 @@ if (with-tests)
         "../../test/message/get_address.cpp"
         "../../test/message/get_block_transactions.cpp"
         "../../test/message/get_blocks.cpp"
+        "../../test/message/get_compact_filter_checkpoint.cpp"
+        "../../test/message/get_compact_filter_headers.cpp"
+        "../../test/message/get_compact_filters.cpp"
         "../../test/message/get_data.cpp"
         "../../test/message/get_headers.cpp"
         "../../test/message/header.cpp"
@@ -690,15 +687,17 @@ if (with-tests)
         "../../test/unicode/unicode_istream.cpp"
         "../../test/unicode/unicode_ostream.cpp"
         "../../test/utility/binary.cpp"
+        "../../test/utility/bit_stream.cpp"
         "../../test/utility/collection.cpp"
         "../../test/utility/data.cpp"
         "../../test/utility/endian.cpp"
-        "../../test/utility/png.cpp"
+        "../../test/utility/neutrino_filter.cpp"
         "../../test/utility/property_tree.cpp"
         "../../test/utility/pseudo_random.cpp"
         "../../test/utility/serializer.cpp"
         "../../test/utility/stream.cpp"
         "../../test/utility/thread.cpp"
+        "../../test/utility/tiff.cpp"
         "../../test/wallet/bitcoin_uri.cpp"
         "../../test/wallet/ec_private.cpp"
         "../../test/wallet/ec_public.cpp"
@@ -710,29 +709,30 @@ if (with-tests)
         "../../test/wallet/mnemonic.cpp"
         "../../test/wallet/mnemonic.hpp"
         "../../test/wallet/payment_address.cpp"
-        "../../test/wallet/qrcode.cpp"
+        "../../test/wallet/qr_code.cpp"
         "../../test/wallet/select_outputs.cpp"
         "../../test/wallet/stealth_address.cpp"
         "../../test/wallet/stealth_receiver.cpp"
         "../../test/wallet/stealth_sender.cpp"
         "../../test/wallet/uri.cpp"
-        "../../test/wallet/uri_reader.cpp" )
+        "../../test/wallet/uri_reader.cpp"
+        "../../test/wallet/witness_address.cpp" )
 
-    add_test( NAME libbitcoin-test COMMAND libbitcoin-test
+    add_test( NAME libbitcoin-system-test COMMAND libbitcoin-system-test
             --run_test=*
             --show_progress=no
             --detect_memory_leak=0
             --report_level=no
             --build_info=yes )
 
-#     libbitcoin-test project specific include directories.
+#     libbitcoin-system-test project specific include directories.
 #------------------------------------------------------------------------------
-    target_include_directories( libbitcoin-test PRIVATE
+    target_include_directories( libbitcoin-system-test PRIVATE
         "../../include" )
 
-#     libbitcoin-test project specific libraries/linker flags.
+#     libbitcoin-system-test project specific libraries/linker flags.
 #------------------------------------------------------------------------------
-    target_link_libraries( libbitcoin-test
+    target_link_libraries( libbitcoin-system-test
         ${CANONICAL_LIB_NAME}
         ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} )
 
@@ -741,11 +741,11 @@ endif()
 # Manage pkgconfig installation.
 #------------------------------------------------------------------------------
 configure_file(
-  "../../libbitcoin.pc.in"
-  "libbitcoin.pc" @ONLY )
+  "../../libbitcoin-system.pc.in"
+  "libbitcoin-system.pc" @ONLY )
 
 install( FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/libbitcoin.pc"
+    "${CMAKE_CURRENT_BINARY_DIR}/libbitcoin-system.pc"
     DESTINATION "${pkgconfigdir}" )
 
 # Manage installation of docs.
@@ -757,7 +757,7 @@ install( FILES
     "../../INSTALL"
     "../../NEWS"
     "../../README"
-    DESTINATION share/doc/libbitcoin )
+    DESTINATION share/doc/libbitcoin-system )
 
 # Manage ${CANONICAL_LIB_NAME} installation.
 #------------------------------------------------------------------------------

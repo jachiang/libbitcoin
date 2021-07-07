@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,17 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/message/heading.hpp>
+#include <bitcoin/system/message/heading.hpp>
 
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/message/messages.hpp>
-#include <bitcoin/bitcoin/message/version.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/message/messages.hpp>
+#include <bitcoin/system/message/version.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace message {
 
 size_t heading::maximum_size()
@@ -194,6 +195,12 @@ message_type heading::type() const
         return message_type::block;
     if (command_ == compact_block::command)
         return message_type::compact_block;
+    if (command_ == compact_filter_checkpoint::command)
+        return message_type::compact_filter_checkpoint;
+    if (command_ == compact_filter_headers::command)
+        return message_type::compact_filter_headers;
+    if (command_ == compact_filter::command)
+        return message_type::compact_filter;
     if (command_ == fee_filter::command)
         return message_type::fee_filter;
     if (command_ == filter_add::command)
@@ -208,6 +215,12 @@ message_type heading::type() const
         return message_type::get_block_transactions;
     if (command_ == get_blocks::command)
         return message_type::get_blocks;
+    if (command_ == get_compact_filter_checkpoint::command)
+        return message_type::get_compact_filter_checkpoint;
+    if (command_ == get_compact_filter_headers::command)
+        return message_type::get_compact_filter_headers;
+    if (command_ == get_compact_filters::command)
+        return message_type::get_compact_filters;
     if (command_ == get_data::command)
         return message_type::get_data;
     if (command_ == get_headers::command)
@@ -315,4 +328,5 @@ bool heading::operator!=(const heading& other) const
 }
 
 } // namespace message
+} // namespace system
 } // namespace libbitcoin

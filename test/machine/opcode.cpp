@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,10 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
-using namespace bc;
-using namespace bc::machine;
+using namespace bc::system;
+using namespace bc::system::machine;
 
 BOOST_AUTO_TEST_SUITE(opcode_tests)
 
@@ -161,6 +161,7 @@ BOOST_AUTO_TEST_CASE(opcode__opcode_to_string__nop2_or_checklocktimeverify_any_f
     BOOST_REQUIRE(opcode_to_string(opcode::nop2, rule_fork::bip16_rule) == "nop2");
     BOOST_REQUIRE(opcode_to_string(opcode::nop2, rule_fork::bip30_rule) == "nop2");
     BOOST_REQUIRE(opcode_to_string(opcode::nop2, rule_fork::bip34_rule) == "nop2");
+    BOOST_REQUIRE(opcode_to_string(opcode::nop2, rule_fork::bip42_rule) == "nop2");
     BOOST_REQUIRE(opcode_to_string(opcode::nop2, rule_fork::bip66_rule) == "nop2");
     BOOST_REQUIRE(opcode_to_string(opcode::nop2, rule_fork::bip112_rule) == "nop2");
 }
@@ -181,6 +182,7 @@ BOOST_AUTO_TEST_CASE(opcode__opcode_to_string__nop3_or_checksequenceverify_any_f
     BOOST_REQUIRE(opcode_to_string(opcode::nop3, rule_fork::bip16_rule) == "nop3");
     BOOST_REQUIRE(opcode_to_string(opcode::nop3, rule_fork::bip30_rule) == "nop3");
     BOOST_REQUIRE(opcode_to_string(opcode::nop3, rule_fork::bip34_rule) == "nop3");
+    BOOST_REQUIRE(opcode_to_string(opcode::nop2, rule_fork::bip42_rule) == "nop2");
     BOOST_REQUIRE(opcode_to_string(opcode::nop3, rule_fork::bip66_rule) == "nop3");
     BOOST_REQUIRE(opcode_to_string(opcode::nop3, rule_fork::bip65_rule) == "nop3");
 }

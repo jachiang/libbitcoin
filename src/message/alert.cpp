@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,18 +16,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/message/alert.hpp>
+#include <bitcoin/system/message/alert.hpp>
 
-#include <bitcoin/bitcoin/math/limits.hpp>
-#include <bitcoin/bitcoin/message/messages.hpp>
-#include <bitcoin/bitcoin/message/version.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/math/limits.hpp>
+#include <bitcoin/system/message/messages.hpp>
+#include <bitcoin/system/message/version.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace message {
 
 const std::string alert::command = "alert";
@@ -105,7 +106,7 @@ bool alert::from_data(uint32_t version, std::istream& stream)
     return from_data(version, source);
 }
 
-bool alert::from_data(uint32_t , reader& source)
+bool alert::from_data(uint32_t, reader& source)
 {
     reset();
 
@@ -136,7 +137,7 @@ void alert::to_data(uint32_t version, std::ostream& stream) const
     to_data(version, sink);
 }
 
-void alert::to_data(uint32_t , writer& sink) const
+void alert::to_data(uint32_t, writer& sink) const
 {
     sink.write_variable_little_endian(payload_.size());
     sink.write_bytes(payload_);
@@ -209,4 +210,5 @@ bool alert::operator!=(const alert& other) const
 }
 
 } // namespace message
+} // namespace system
 } // namespace libbitcoin

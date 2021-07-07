@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,22 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/chain/point.hpp>
+#include <bitcoin/system/chain/point.hpp>
 
 #include <cstdint>
-#include <sstream>
 #include <utility>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/formats/base_16.hpp>
-#include <bitcoin/bitcoin/message/messages.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/message/messages.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace chain {
 
 // This sentinel is serialized and defined by consensus, not implementation.
@@ -42,29 +40,39 @@ const uint32_t point::null_index = no_previous_output;
 
 // A default instance is invalid (until modified).
 point::point()
-  : hash_(null_hash), index_(0), valid_(false)
+  : hash_(null_hash),
+    index_(0),
+    valid_(false)
 {
 }
 
 point::point(const hash_digest& hash, uint32_t index)
-  : hash_(hash), index_(index), valid_(true)
+  : hash_(hash),
+    index_(index),
+    valid_(true)
 {
 }
 
 point::point(hash_digest&& hash, uint32_t index)
-  : hash_(std::move(hash)), index_(index), valid_(true)
+  : hash_(std::move(hash)),
+    index_(index),
+    valid_(true)
 {
 }
 
 // protected
 point::point(const hash_digest& hash, uint32_t index, bool valid)
-  : hash_(hash), index_(index), valid_(valid)
+  : hash_(hash),
+    index_(index),
+    valid_(valid)
 {
 }
 
 // protected
 point::point(hash_digest&& hash, uint32_t index, bool valid)
-  : hash_(std::move(hash)), index_(index), valid_(valid)
+  : hash_(std::move(hash)),
+    index_(index),
+    valid_(valid)
 {
 }
 
@@ -308,4 +316,5 @@ bool point::is_null() const
 }
 
 } // namespace chain
+} // namespace system
 } // namespace libbitcoin

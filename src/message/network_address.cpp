@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,16 +16,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/message/network_address.hpp>
+#include <bitcoin/system/message/network_address.hpp>
 
 #include <algorithm>
 #include <cstdint>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace message {
 
 static const ip_address null_address
@@ -110,7 +111,7 @@ bool network_address::from_data(uint32_t version,
     return from_data(version, source, with_timestamp);
 }
 
-bool network_address::from_data(uint32_t , reader& source,
+bool network_address::from_data(uint32_t, reader& source,
     bool with_timestamp)
 {
     reset();
@@ -258,4 +259,5 @@ bool network_address::operator!=(const network_address& other) const
 }
 
 } // namespace message
+} // namespace system
 } // namespace libbitcoin

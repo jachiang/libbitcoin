@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,18 +16,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/message/reject.hpp>
+#include <bitcoin/system/message/reject.hpp>
 
-#include <bitcoin/bitcoin/message/block.hpp>
-#include <bitcoin/bitcoin/message/messages.hpp>
-#include <bitcoin/bitcoin/message/transaction.hpp>
-#include <bitcoin/bitcoin/message/version.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/message/block.hpp>
+#include <bitcoin/system/message/messages.hpp>
+#include <bitcoin/system/message/transaction.hpp>
+#include <bitcoin/system/message/version.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace message {
 
 const std::string reject::command = "reject";
@@ -182,7 +183,7 @@ void reject::to_data(uint32_t version, std::ostream& stream) const
     to_data(version, sink);
 }
 
-void reject::to_data(uint32_t , writer& sink) const
+void reject::to_data(uint32_t, writer& sink) const
 {
     sink.write_string(message_);
     sink.write_byte(reason_to_byte(code_));
@@ -350,4 +351,5 @@ uint8_t reject::reason_to_byte(reason_code value)
 }
 
 } // namespace message
+} // namespace system
 } // namespace libbitcoin

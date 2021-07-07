@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,18 +16,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/select_outputs.hpp>
+#include <bitcoin/system/wallet/select_outputs.hpp>
 
 #include <algorithm>
 #include <cstdint>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/chain/points_value.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/chain/points_value.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 
-using namespace bc::chain;
+using namespace bc::system::chain;
 
 void select_outputs::greedy(points_value& out, const points_value& unspent,
     uint64_t minimum_value)
@@ -63,7 +64,7 @@ void select_outputs::greedy(points_value& out, const points_value& unspent,
         return left.value() > right.value();
     };
 
-    // Reorder list beteen values that exceed minimum and those that do not.
+    // Reorder list between values that exceed minimum and those that do not.
     const auto sufficient = std::partition(copy.begin(), copy.end(), below);
 
     // If there are values large enough, return the smallest (of the largest).
@@ -130,5 +131,6 @@ void select_outputs::select(points_value& out, const points_value& unspent,
     }
 }
 
-} // namspace wallet
-} // namspace libbitcoin
+} // namespace wallet
+} // namespace system
+} // namespace libbitcoin

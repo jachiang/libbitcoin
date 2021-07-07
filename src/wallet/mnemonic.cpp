@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,21 +16,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/mnemonic.hpp>
+#include <bitcoin/system/wallet/mnemonic.hpp>
 
 #include <algorithm>
 #include <cstdint>
 #include <boost/locale.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/unicode/unicode.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/binary.hpp>
-#include <bitcoin/bitcoin/utility/collection.hpp>
-#include <bitcoin/bitcoin/utility/string.hpp>
-#include <bitcoin/bitcoin/wallet/dictionary.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/unicode/unicode.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/binary.hpp>
+#include <bitcoin/system/utility/collection.hpp>
+#include <bitcoin/system/utility/string.hpp>
+#include <bitcoin/system/wallet/dictionary.hpp>
 #include "../math/external/pkcs5_pbkdf2.h"
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 
 // BIP-39 private constants.
@@ -80,7 +81,7 @@ bool validate_mnemonic(const word_list& words, const dictionary& lexicon)
     return std::equal(mnemonic.begin(), mnemonic.end(), words.begin());
 }
 
-word_list create_mnemonic(data_slice entropy, const dictionary &lexicon)
+word_list create_mnemonic(const data_slice& entropy, const dictionary &lexicon)
 {
     if ((entropy.size() % mnemonic_seed_multiple) != 0)
         return {};
@@ -143,9 +144,8 @@ long_hash decode_mnemonic(const word_list& mnemonic)
 long_hash decode_mnemonic(const word_list& mnemonic,
     const std::string& passphrase)
 {
-    const auto sentence = join(mnemonic);
-    const std::string prefix(passphrase_prefix);
-    const auto salt = to_normal_nfkd_form(prefix + passphrase);
+    const auto sentence = to_normal_nfkd_form(join(mnemonic));
+    const auto salt = to_normal_nfkd_form(passphrase_prefix + passphrase);
     return pkcs5_pbkdf2_hmac_sha512(to_chunk(sentence), to_chunk(salt),
         hmac_iterations);
 }
@@ -153,4 +153,5 @@ long_hash decode_mnemonic(const word_list& mnemonic,
 #endif
 
 } // namespace wallet
+} // namespace system
 } // namespace libbitcoin

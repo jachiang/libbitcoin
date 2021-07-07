@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -20,9 +20,10 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 using namespace bc;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(limits_tests)
 
@@ -300,6 +301,41 @@ BOOST_AUTO_TEST_CASE(limits__safe_subtract__size_t_minimum_minus_maximum__throws
 BOOST_AUTO_TEST_CASE(limits__safe_subtract__size_t_half_minus_maximum__throws_underflow)
 {
     BOOST_REQUIRE_THROW(safe_subtract(half, maximum), std::underflow_error);
+}
+
+// safe_multiply
+//-----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(limits__safe_multiply__size_t_minimum_times_minimum__minimum)
+{
+    BOOST_REQUIRE_EQUAL(safe_multiply(minimum, minimum), minimum);
+}
+
+BOOST_AUTO_TEST_CASE(limits__safe_multiply__size_t_maximum_times_maximum__throws_overflow)
+{
+    BOOST_REQUIRE_THROW(safe_multiply(maximum, maximum), std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(limits__safe_multiply__size_t_minimum_times_maximum__minimum)
+{
+    BOOST_REQUIRE_EQUAL(safe_multiply(minimum, maximum), minimum);
+}
+
+BOOST_AUTO_TEST_CASE(limits__safe_multiply__size_t_maximum_times_minimum__minimum)
+{
+    BOOST_REQUIRE_EQUAL(safe_multiply(maximum, minimum), minimum);
+}
+
+BOOST_AUTO_TEST_CASE(limits__safe_multiply__size_t_half_times_2__maximum_minus_1)
+{
+    // The maximum of an unsigned integer is always odd, so half is always rounded down.
+    // Therefore 2 * half is always one less than the unsigned integer maximum.
+    BOOST_REQUIRE_EQUAL(safe_multiply(half, size_t{2}), maximum - size_t{1});
+}
+
+BOOST_AUTO_TEST_CASE(limits__safe_multiply__size_t_2_times_half_plus_1__throws_overflow)
+{
+    BOOST_REQUIRE_THROW(safe_multiply(size_t{2}, half + size_t{1}), std::overflow_error);
 }
 
 // safe_increment

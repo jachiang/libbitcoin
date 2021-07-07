@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -20,12 +20,13 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <bitcoin/bitcoin/math/checksum.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
-#include <bitcoin/bitcoin/wallet/encrypted_keys.hpp>
+#include <bitcoin/system/math/checksum.hpp>
+#include <bitcoin/system/utility/data.hpp>
+#include <bitcoin/system/wallet/encrypted_keys.hpp>
 #include "parse_encrypted_prefix.hpp"
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 
 // This prefix results in the prefix "passphrase" in the base58 encoding.
@@ -83,4 +84,5 @@ bool parse_encrypted_token::verify_magic() const
 }
 
 } // namespace wallet
+} // namespace system
 } // namespace libbitcoin

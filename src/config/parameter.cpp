@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,30 +16,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/config/parameter.hpp>
+#include <bitcoin/system/config/parameter.hpp>
 
-#include <iostream>
-#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/utility/collection.hpp>
-#include <bitcoin/bitcoin/utility/string.hpp>
+#include <bitcoin/system/utility/collection.hpp>
+#include <bitcoin/system/utility/string.hpp>
 
 namespace po = boost::program_options;
-using namespace libbitcoin::config;
+using namespace libbitcoin::system::config;
 
 const int parameter::not_positional = -1;
 const char parameter::no_short_name = 0x00;
 const char parameter::option_prefix_char = '-';
 
+parameter::~parameter()
+{
+}
+
 // 100% component coverage, common scenarios.
-// A required argument may only be preceeded by required arguments.
+// A required argument may only be preceded by required arguments.
 // Requiredness may be in error if the metadata is inconsistent.
 void parameter::initialize(const po::option_description& option,
     const argument_list& arguments)
 {
     set_position(position(option, arguments));
-    set_args_limit(arguments_limit(get_position(), option, arguments));
+    set_args_limit(arguments_limit(position(), option, arguments));
     set_required(option.semantic()->is_required());
     set_long_name(option.long_name());
     set_short_name(short_name(option));
@@ -64,7 +65,7 @@ char parameter::short_name(const po::option_description& option) const
 
     // This is a substitute that allows us to use boost 1.49 for libbitcoin.
     const auto name = split(option.format_name()).front();
-    auto is_short_name = name[0] == option_prefix_char &&
+    const auto is_short_name = name[0] == option_prefix_char &&
         name[1] != option_prefix_char;
 
     return is_short_name ? name[1] : no_short_name;

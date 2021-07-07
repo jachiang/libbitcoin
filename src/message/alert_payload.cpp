@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,19 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/message/alert_payload.hpp>
+#include <bitcoin/system/message/alert_payload.hpp>
 
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/message/messages.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/message/messages.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace message {
 
-// Libbitcon doesn't use this.
+// Libbitcoin doesn't use this.
 const ec_uncompressed alert_payload::satoshi_public_key
 {
     {
@@ -224,7 +225,7 @@ bool alert_payload::from_data(uint32_t version, std::istream& stream)
     return from_data(version, source);
 }
 
-bool alert_payload::from_data(uint32_t , reader& source)
+bool alert_payload::from_data(uint32_t, reader& source)
 {
     reset();
 
@@ -274,7 +275,7 @@ void alert_payload::to_data(uint32_t version, std::ostream& stream) const
     to_data(version, sink);
 }
 
-void alert_payload::to_data(uint32_t , writer& sink) const
+void alert_payload::to_data(uint32_t, writer& sink) const
 {
     sink.write_4_bytes_little_endian(this->version_);
     sink.write_8_bytes_little_endian(relay_until_);
@@ -535,4 +536,5 @@ bool alert_payload::operator!=(const alert_payload& other) const
 }
 
 } // namespace message
+} // namespace system
 } // namespace libbitcoin

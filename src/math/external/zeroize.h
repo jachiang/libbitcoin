@@ -15,16 +15,18 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#ifndef LIBBITCOIN_ZEROIZE_HPP
-#define LIBBITCOIN_ZEROIZE_HPP
+#ifndef LIBBITCOIN_SYSTEM_ZEROIZE_HPP
+#define LIBBITCOIN_SYSTEM_ZEROIZE_HPP
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
 
+void fill(void* const buffer, size_t length, uint8_t value);
 void zeroize(void* const buffer, size_t length);
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,24 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/chain/input.hpp>
+#include <bitcoin/system/chain/input.hpp>
 
 #include <algorithm>
-#include <sstream>
-#include <bitcoin/bitcoin/chain/script.hpp>
-#include <bitcoin/bitcoin/chain/witness.hpp>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/utility/container_sink.hpp>
-#include <bitcoin/bitcoin/utility/container_source.hpp>
-#include <bitcoin/bitcoin/utility/istream_reader.hpp>
-#include <bitcoin/bitcoin/utility/ostream_writer.hpp>
-#include <bitcoin/bitcoin/wallet/payment_address.hpp>
+#include <bitcoin/system/chain/script.hpp>
+#include <bitcoin/system/chain/witness.hpp>
+#include <bitcoin/system/constants.hpp>
+#include <bitcoin/system/utility/container_sink.hpp>
+#include <bitcoin/system/utility/container_source.hpp>
+#include <bitcoin/system/utility/istream_reader.hpp>
+#include <bitcoin/system/utility/ostream_writer.hpp>
+#include <bitcoin/system/wallet/payment_address.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace chain {
 
-using namespace bc::wallet;
-using namespace bc::machine;
+using namespace bc::system::wallet;
+using namespace bc::system::machine;
 
 // Constructors.
 //-----------------------------------------------------------------------------
@@ -431,7 +431,6 @@ size_t input::signature_operations(bool bip16, bool bip141) const
 {
     chain::script witness, embedded;
     const auto& prevout = previous_output_.metadata.cache.script();
-    ////BITCOIN_ASSERT_MSG(!bip141 || bip16, "bip141 implies bip16");
 
     // Penalize quadratic signature operations (bip141).
     const auto sigops_factor = bip141 ? fast_sigops_factor : 1u;
@@ -441,7 +440,7 @@ size_t input::signature_operations(bool bip16, bool bip141) const
 
     if (bip141 && witness_.extract_sigop_script(witness, prevout))
     {
-        // Add sigops in the witness (bip141).
+        // Add sigops in the witness script (bip141).
         return sigops + witness.sigops(true);
     }
 
@@ -449,7 +448,7 @@ size_t input::signature_operations(bool bip16, bool bip141) const
     {
         if (bip141 && witness_.extract_sigop_script(witness, embedded))
         {
-            // Add sigops in the embedded witness (bip141).
+            // Add sigops in the embedded witness script (bip141).
             return sigops + witness.sigops(true);
         }
         else
@@ -495,4 +494,5 @@ bool input::extract_reserved_hash(hash_digest& out) const
 }
 
 } // namespace chain
+} // namespace system
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,24 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/encrypted_keys.hpp>
+#include <bitcoin/system/wallet/encrypted_keys.hpp>
 
 #include <cstdint>
 #include <cstddef>
 #include <algorithm>
 #include <stdexcept>
 #include <boost/locale.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/math/checksum.hpp>
-#include <bitcoin/bitcoin/math/crypto.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
-#include <bitcoin/bitcoin/math/elliptic_curve.hpp>
-#include <bitcoin/bitcoin/unicode/unicode.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/data.hpp>
-#include <bitcoin/bitcoin/utility/endian.hpp>
-#include <bitcoin/bitcoin/wallet/ec_private.hpp>
-#include <bitcoin/bitcoin/wallet/ec_public.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/math/checksum.hpp>
+#include <bitcoin/system/math/crypto.hpp>
+#include <bitcoin/system/math/hash.hpp>
+#include <bitcoin/system/math/elliptic_curve.hpp>
+#include <bitcoin/system/unicode/unicode.hpp>
+#include <bitcoin/system/utility/assert.hpp>
+#include <bitcoin/system/utility/data.hpp>
+#include <bitcoin/system/utility/endian.hpp>
+#include <bitcoin/system/wallet/ec_private.hpp>
+#include <bitcoin/system/wallet/ec_public.hpp>
 #include "parse_encrypted_keys/parse_encrypted_key.hpp"
 #include "parse_encrypted_keys/parse_encrypted_prefix.hpp"
 #include "parse_encrypted_keys/parse_encrypted_private.hpp"
@@ -41,6 +41,7 @@
 #include "parse_encrypted_keys/parse_encrypted_token.hpp"
 
 namespace libbitcoin {
+namespace system {
 namespace wallet {
 
 // Alias commonly-used constants for brevity.
@@ -48,7 +49,7 @@ static constexpr auto half = half_hash_size;
 static constexpr auto quarter = quarter_hash_size;
 
 // Ensure that hash sizes are aligned with AES block size.
-static_assert(2 * quarter == bc::aes256_block_size, "oops!");
+static_assert(2 * quarter == aes256_block_size, "oops!");
 
 // address_
 // ----------------------------------------------------------------------------
@@ -134,7 +135,7 @@ static one_byte point_sign(const one_byte& single, const hash_digest& hash)
 
 #ifdef WITH_ICU
 
-static hash_digest scrypt_token(data_slice data, data_slice salt)
+static hash_digest scrypt_token(const data_slice& data, const data_slice& salt)
 {
     // Arbitrary scrypt parameters from BIP38.
     return scrypt<hash_size>(data, salt, 16384u, 8u, 8u);
@@ -142,7 +143,7 @@ static hash_digest scrypt_token(data_slice data, data_slice salt)
 
 #endif
 
-static long_hash scrypt_pair(data_slice data, data_slice salt)
+static long_hash scrypt_pair(const data_slice& data, const data_slice& salt)
 {
     // Arbitrary scrypt parameters from BIP38.
     return scrypt<long_hash_size>(data, salt, 1024u, 1u, 1u);
@@ -150,7 +151,7 @@ static long_hash scrypt_pair(data_slice data, data_slice salt)
 
 #ifdef WITH_ICU
 
-static long_hash scrypt_private(data_slice data, data_slice salt)
+static long_hash scrypt_private(const data_slice& data, const data_slice& salt)
 {
     // Arbitrary scrypt parameters from BIP38.
     return scrypt<long_hash_size>(data, salt, 16384u, 8u, 8u);
@@ -308,7 +309,7 @@ static data_chunk normal(const std::string& passphrase)
 }
 
 static bool create_token(encrypted_token& out_token,
-    const std::string& passphrase, data_slice owner_salt,
+    const std::string& passphrase, const data_slice& owner_salt,
     const ek_entropy& owner_entropy,
     const byte_array<parse_encrypted_token::prefix_size>& prefix)
 {
@@ -522,4 +523,5 @@ bool decrypt(ec_compressed& out_point, uint8_t& out_version,
 #endif // WITH_ICU
 
 } // namespace wallet
+} // namespace system
 } // namespace libbitcoin

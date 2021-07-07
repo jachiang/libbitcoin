@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,17 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/config/sodium.hpp>
+#include <bitcoin/system/config/sodium.hpp>
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/formats/base_85.hpp>
-#include <bitcoin/bitcoin/math/hash.hpp>
+#include <bitcoin/system/formats/base_85.hpp>
+#include <bitcoin/system/math/hash.hpp>
 
 namespace libbitcoin {
+namespace system {
 namespace config {
 
 sodium::sodium()
@@ -99,4 +98,5 @@ std::ostream& operator<<(std::ostream& output, const sodium& argument)
 }
 
 } // namespace config
+} // namespace system
 } // namespace libbitcoin
