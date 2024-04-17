@@ -1,5 +1,5 @@
 REM ###########################################################################
-REM #  Copyright (c) 2014-2015 libbitcoin developers (see COPYING).
+REM #  Copyright (c) 2014-2023 libbitcoin-system developers (see COPYING).
 REM #
 REM #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 REM #
@@ -7,12 +7,14 @@ REM ###########################################################################
 @echo off
 SETLOCAL ENABLEEXTENSIONS
 SET "parent=%~dp0"
-SET "path_base=%~1"
-SET "nuget_pkg_path=%~1\.nuget\packages"
-SET "msbuild_args=/verbosity:minimal /p:Platform=%~2 /p:Configuration=%~3"
-SET "proj_version=%~4"
+SET "relative_path_base=%~1"
+call cd /d "%relative_path_base%"
+SET "path_base=%cd%"
+SET "nuget_pkg_path=%path_base%\.nuget\packages"
+SET "msbuild_args=/verbosity:minimal /p:Platform=%~2 /p:Configuration=%~3 /p:PreferredToolArchitecture=%~4"
+SET "proj_version=%~5"
 SET "msbuild_exe=msbuild"
-IF EXIST "%~5" SET "msbuild_exe=%~5"
+IF EXIST "%~6" SET "msbuild_exe=%~6"
 
 call :pending "Build initialized..."
 IF NOT EXIST "%nuget_pkg_path%" (
@@ -23,9 +25,9 @@ IF NOT EXIST "%nuget_pkg_path%" (
   )
 )
 
-call :bld_repo libbitcoin
+call :bld_repo libbitcoin-system
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Building libbitcoin failed."
+  call :failure "Building libbitcoin-system failed."
   exit /b 1
 )
 
@@ -62,7 +64,7 @@ IF %ERRORLEVEL% NEQ 0 (
   exit /b 1
 )
 call cd /d "%path_base%\%~1\builds\msvc\%proj_version%"
-call "%msbuild_exe%" %msbuild_args% %~1.sln
+call "%msbuild_exe%" %msbuild_args% %~1.sln /p:PreBuildEventUseInBuild=false /p:PostBuildEventUseInBuild=false
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "%msbuild_exe% %msbuild_args% %~1.sln failed."
   exit /b 1
@@ -79,7 +81,7 @@ IF %ERRORLEVEL% NEQ 0 (
   exit /b 1
 )
 call cd /d "%path_base%\%~1\builds\msvc\%proj_version%"
-call "%msbuild_exe%" %msbuild_args% /target:%~1:Rebuild %~1.sln
+call "%msbuild_exe%" %msbuild_args% /target:%~1:Rebuild %~1.sln /p:PreBuildEventUseInBuild=false /p:PostBuildEventUseInBuild=false
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "%msbuild_exe% %msbuild_args% /target:%~1:Rebuild %~1.sln"
   exit /b 1
@@ -90,7 +92,7 @@ exit /b 0
 
 :depends
 call :pending "nuget restoring dependencies for %~1..."
-call nuget restore "%path_base%\%~1\builds\msvc\%proj_version%\%~1.sln" -Outputdir "%nuget_pkg_path%"
+call nuget restore "%path_base%\%~1\builds\msvc\%proj_version%\%~1.sln" -OutputDirectory "%nuget_pkg_path%"
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "nuget restore failed."
   exit /b 1

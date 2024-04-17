@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,12 +16,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin/wallet/uri.hpp>
+#include <bitcoin/system/wallet/uri.hpp>
 
 #include <iomanip>
 #include <sstream>
-#include <bitcoin/bitcoin/define.hpp>
-#include <bitcoin/bitcoin/formats/base_16.hpp>
+#include <bitcoin/system/define.hpp>
+#include <bitcoin/system/formats/base_16.hpp>
 
 namespace libbitcoin {
 namespace wallet {

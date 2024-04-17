@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,10 +19,50 @@
 #include "mnemonic.hpp"
 
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <algorithm>
+#include <bitcoin/system.hpp>
 
 using namespace bc;
 using namespace bc::wallet;
+
+bool intersects(dictionary alpha, dictionary beta)
+{
+    return std::any_of(alpha.begin(), alpha.end(),
+        [&](const char* test_right)
+        {
+#if defined _MSC_VER && (!defined NDEBUG)
+            // MSVC build error mitigation.
+            return std::find_if(beta.begin(), beta.end(),
+            [&](const char test_left[])
+            {
+                return (std::strcmp(test_left, test_right) == 0);
+            }) != std::end(beta);
+#else
+            return std::find(beta.begin(), beta.end(),
+                test_right) != std::end(beta);
+#endif
+        });
+}
+
+dictionary::size_type intersection_count(dictionary alpha, dictionary beta)
+{
+    return std::count_if(alpha.begin(), alpha.end(),
+        [&](const char* test_right)
+        {
+#if defined _MSC_VER && (!defined NDEBUG)
+            // MSVC build error mitigation.
+            return std::find_if(beta.begin(), beta.end(),
+                [&](const char test_left[])
+                {
+                    return (std::strcmp(test_left, test_right) == 0);
+                }) != std::end(beta);
+#else
+            return std::find(beta.begin(), beta.end(),
+                    test_right) != std::end(beta);
+#endif
+
+        });
+}
 
 BOOST_AUTO_TEST_SUITE(mnemonic_tests)
 
@@ -55,7 +95,7 @@ BOOST_AUTO_TEST_CASE(mnemonic__decode_mnemonic__bx)
     for (const auto& vector: mnemonic_bx_to_seed_vectors)
     {
         const auto words = split(vector.mnemonic, ",");
-        BOOST_REQUIRE(validate_mnemonic(words));
+        BOOST_REQUIRE(validate_mnemonic(words, vector.language));
         const auto seed = decode_mnemonic(words, vector.passphrase);
         BOOST_REQUIRE_EQUAL(encode_base16(seed), vector.seed);
     }
@@ -85,7 +125,7 @@ BOOST_AUTO_TEST_CASE(mnemonic__create_mnemonic__bx)
         const auto mnemonic = create_mnemonic(entropy, vector.language);
         BOOST_REQUIRE(mnemonic.size() > 0);
         BOOST_REQUIRE_EQUAL(join(mnemonic, ","), vector.mnemonic);
-        BOOST_REQUIRE(validate_mnemonic(mnemonic));
+        BOOST_REQUIRE(validate_mnemonic(mnemonic, vector.language));
     }
 }
 
@@ -116,130 +156,50 @@ BOOST_AUTO_TEST_CASE(mnemonic__create_mnemonic__giant)
 
 BOOST_AUTO_TEST_CASE(mnemonic__dictionary__en_es__no_intersection)
 {
-    const auto& english = language::en;
-    const auto& spanish = language::es;
-    size_t intersection = 0;
-    for (const auto es: spanish)
-    {
-        std::string test(es);
-        const auto it = std::find(english.begin(), english.end(), test);
-        if (it != std::end(english))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 0u);
+    const auto intersection = intersects(language::en, language::es);
+    BOOST_REQUIRE(!intersection);
 }
 
-BOOST_AUTO_TEST_CASE(mnemonic__dictionary__en_it__no_intersection)
+BOOST_AUTO_TEST_CASE(mnemonic__dictionary__it_en__no_intersection)
 {
-    const auto& english = language::en;
-    const auto& italian = language::it;
-    size_t intersection = 0;
-    for (const auto it: italian)
-    {
-        std::string test(it);
-        const auto iter = std::find(english.begin(), english.end(), test);
-        if (iter != std::end(english))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 0u);
+    const auto intersection = intersects(language::it, language::en);
+    BOOST_REQUIRE(!intersection);
 }
 
 BOOST_AUTO_TEST_CASE(mnemonic__dictionary__fr_es__no_intersection)
 {
-    const auto& french = language::fr;
-    const auto& spanish = language::es;
-    size_t intersection = 0;
-    for (const auto es: spanish)
-    {
-        std::string test(es);
-        const auto it = std::find(french.begin(), french.end(), test);
-        if (it != std::end(french))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 0u);
+    const auto intersection = intersects(language::fr, language::es);
+    BOOST_REQUIRE(!intersection);
 }
 
 BOOST_AUTO_TEST_CASE(mnemonic__dictionary__it_es__no_intersection)
 {
-    const auto& italian = language::it;
-    const auto& spanish = language::es;
-    size_t intersection = 0;
-    for (const auto es: spanish)
-    {
-        std::string test(es);
-        const auto it = std::find(italian.begin(), italian.end(), test);
-        if (it != std::end(italian))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 0u);
+    const auto intersection = intersects(language::it, language::es);
+    BOOST_REQUIRE(!intersection);
 }
 
 BOOST_AUTO_TEST_CASE(mnemonic__dictionary__fr_it__no_intersection)
 {
-    const auto& french = language::fr;
-    const auto& italian = language::it;
-    size_t intersection = 0;
-    for (const auto it: italian)
-    {
-        std::string test(it);
-        const auto iter = std::find(french.begin(), french.end(), test);
-        if (iter != std::end(french))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 0u);
+    const auto intersection = intersects(language::fr, language::it);
+    BOOST_REQUIRE(!intersection);
 }
 
-BOOST_AUTO_TEST_CASE(mnemonic__dictionary__cs_ru__no_intersection)
+BOOST_AUTO_TEST_CASE(mnemonic__dictionary__cs_pt__no_intersection)
 {
-    const auto& czech = language::cs;
-    const auto& russian = language::ru;
-    size_t intersection = 0;
-    for (const auto ru: russian)
-    {
-        std::string test(ru);
-        const auto iter = std::find(czech.begin(), czech.end(), test);
-        if (iter != std::end(czech))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 0u);
+    const auto intersection = intersects(language::cs, language::pt);
+    BOOST_REQUIRE(!intersection);
 }
 
-BOOST_AUTO_TEST_CASE(mnemonic__dictionary__cs_uk__no_intersection)
+BOOST_AUTO_TEST_CASE(mnemonic__dictionary__ko_zh_Hans__no_intersection)
 {
-    const auto& czech = language::cs;
-    const auto& ukranian = language::uk;
-    size_t intersection = 0;
-    for (const auto uk: ukranian)
-    {
-        std::string test(uk);
-        const auto iter = std::find(czech.begin(), czech.end(), test);
-        if (iter != std::end(czech))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 0u);
+    const auto intersection = intersects(language::ko, language::zh_Hans);
+    BOOST_REQUIRE(!intersection);
 }
 
-BOOST_AUTO_TEST_CASE(mnemonic__dictionary__zh_Hans_Hant__intersection)
+BOOST_AUTO_TEST_CASE(mnemonic__dictionary__zh_Hans_Hant__1275_intersections)
 {
-    const auto& simplified = language::zh_Hans;
-    const auto& traditional = language::zh_Hant;
-    size_t intersection = 0;
-    for (const auto hant: traditional)
-    {
-        std::string test(hant);
-        const auto it = std::find(simplified.begin(), simplified.end(), test);
-        if (it != std::end(simplified))
-            intersection++;
-    }
-
-    BOOST_REQUIRE_EQUAL(intersection, 1275u);
+    const auto intersections = intersection_count(language::zh_Hans, language::zh_Hant);
+    BOOST_REQUIRE_EQUAL(intersections, 1275u);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

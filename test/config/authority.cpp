@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,7 +19,7 @@
 #include <sstream>
 #include <boost/program_options.hpp>
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 using namespace bc;
 using namespace bc::config;
@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(authority__ip__network_address__expected)
     };
 
     const authority host(address);
-    BOOST_REQUIRE(ip_equal(host.ip(), test_ipv6_address));
+    BOOST_REQUIRE(ip_equal(host.ip(), expected_ip));
 }
 
 BOOST_AUTO_TEST_CASE(authority__ip__ip_address__expected)

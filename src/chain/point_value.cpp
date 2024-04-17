@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,8 +19,8 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
-#include <bitcoin/bitcoin/chain/point.hpp>
-#include <bitcoin/bitcoin/chain/point_value.hpp>
+#include <bitcoin/system/chain/point.hpp>
+#include <bitcoin/system/chain/point_value.hpp>
 
 namespace libbitcoin {
 namespace chain {
