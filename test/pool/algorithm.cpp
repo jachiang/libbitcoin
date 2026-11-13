@@ -246,12 +246,10 @@ static bool evaluates_as_integral() NOEXCEPT
     });
 
     const std_array<link_t, 1> candidates{ { 4 } };
-    const auto candidate = accessor::members(out, candidates);
+    const auto mask = accessor::members(out, candidates);
     uint64_t best{}, best_without{}, best_x{}, best_without_x{};
-    accessor::evaluate<uint64_t>(best, best_without, masks, candidate,
-        out, graph);
-    accessor::evaluate<Word>(best_x, best_without_x, masks, candidate,
-        out, graph);
+    accessor::evaluate<uint64_t>(best, best_without, masks, mask, out, graph);
+    accessor::evaluate<Word>(best_x, best_without_x, masks, mask, out, graph);
     return best_x == best && best_without_x == best_without;
 }
 
