@@ -45,6 +45,22 @@ constexpr auto absent = accessor::absent;
 constexpr auto boundary = accessor::boundary;
 constexpr auto unlabeled = accessor::unlabeled;
 
+// The column as stored (little-endian).
+template <typename Column>
+static Column stored(Column column) NOEXCEPT
+{
+    for (auto& value: column)
+        value = accessor::to_column(value);
+
+    return column;
+}
+
+// The value of a stored cell.
+static link_t cell(const std::span<const link_t>& cells, size_t row) NOEXCEPT
+{
+    return accessor::from_column(cells[row]);
+}
+
 // Rows: Q=0, A=1, B=2, D=3, P=4. Confirmed X and Y are not rows.
 // Inputs: 0 Q spends X:0, 1 A spends X:0, 2 A spends Y:0, 3 B spends Y:0,
 // 4 D spends A:0, 5 P spends Q:0. Rings: X:0 (0, 1), Y:0 (2, 3).
@@ -53,6 +69,17 @@ constexpr size_t inputs = 6;
 
 struct state
 {
+    state() NOEXCEPT
+    {
+        cells = stored(cells);
+        children = stored(children);
+        edges = stored(edges);
+        totals = stored(totals);
+        parents = stored(parents);
+        siblings = stored(siblings);
+        rivals = stored(rivals);
+    }
+
     std_array<link_t, rows> cells{ { 0, 0, 0, 0, 0 } };
     std_array<link_t, rows> children{ { 5, 4, none, none, none } };
     std_array<edges_t, rows> edges
@@ -83,6 +110,17 @@ struct state
 // Rows: M=0 (parent none), N=1 spends M:0 and X:0, O=2 spends X:0.
 struct chain_state
 {
+    chain_state() NOEXCEPT
+    {
+        cells = stored(cells);
+        children = stored(children);
+        edges = stored(edges);
+        totals = stored(totals);
+        parents = stored(parents);
+        siblings = stored(siblings);
+        rivals = stored(rivals);
+    }
+
     std_array<link_t, 3> cells{ { 0, 0, 0 } };
     std_array<link_t, 3> children{ { 0, none, none } };
     std_array<edges_t, 3> edges{ { { 0, 0 }, { 0, 2 }, { 2, 1 } } };
@@ -104,6 +142,17 @@ struct chain_state
 // Rows: R=0, S=1 spends R:0, T=2 spends S:0, each uncontested.
 struct line_state
 {
+    line_state() NOEXCEPT
+    {
+        cells = stored(cells);
+        children = stored(children);
+        edges = stored(edges);
+        totals = stored(totals);
+        parents = stored(parents);
+        siblings = stored(siblings);
+        rivals = stored(rivals);
+    }
+
     std_array<link_t, 3> cells{ { unlabeled, unlabeled, unlabeled } };
     std_array<link_t, 3> children{ { 1, 2, none } };
     std_array<edges_t, 3> edges{ { { 0, 1 }, { 1, 1 }, { 2, 1 } } };
@@ -133,7 +182,7 @@ static state label() NOEXCEPT
 static state label_without_a() NOEXCEPT
 {
     state out{};
-    out.cells[1] = absent;
+    out.cells[1] = accessor::to_column(absent);
     accessor::initialize(out.columns());
     while (accessor::propagate<link_t>(out.columns(), out.scratch));
     return out;
@@ -187,6 +236,7 @@ static bool gathers_as_integral() NOEXCEPT
             possible_narrow_cast<link_t>((index * 11) % values.size());
     });
 
+    indexes = stored(indexes);
     std_array<link_t, 47> expected{};
     std_array<link_t, 47> out{};
     accessor::gather<link_t>(expected, values, indexes);
@@ -210,6 +260,7 @@ static bool collects_as_integral() NOEXCEPT
         return possible_narrow_cast<link_t>(at++ % 3);
     });
 
+    cells = stored(cells);
     component_t expected{};
     component_t out{};
     return accessor::collect<link_t>(expected, 1, cells) &&
@@ -227,6 +278,7 @@ static bool finds_as_integral() NOEXCEPT
         return possible_narrow_cast<link_t>(at++ % 4);
     });
 
+    values = stored(values);
     std::vector<link_t> expected{};
     std::vector<link_t> out{};
     accessor::find<link_t>(expected, values, 3);
@@ -316,6 +368,22 @@ static uint64_t high_arrivals(uint64_t rate) NOEXCEPT
 // spending Q:0), bridged from Q.
 struct child_candidate
 {
+    child_candidate() NOEXCEPT
+    {
+        children = stored(children);
+        edges = stored(edges);
+        parents = stored(parents);
+        siblings = stored(siblings);
+        rivals = stored(rivals);
+        extra_cells = stored(extra_cells);
+        extra_children = stored(extra_children);
+        extra_edges = stored(extra_edges);
+        extra_totals = stored(extra_totals);
+        extra_parents = stored(extra_parents);
+        extra_siblings = stored(extra_siblings);
+        extra_rivals = stored(extra_rivals);
+    }
+
     state labeled{ label<link_t>() };
     std_array<link_t, 4> cells
     {
@@ -358,6 +426,17 @@ struct child_candidate
 // bridged from input 0.
 struct rival_candidate
 {
+    rival_candidate() NOEXCEPT
+    {
+        extra_cells = stored(extra_cells);
+        extra_children = stored(extra_children);
+        extra_edges = stored(extra_edges);
+        extra_totals = stored(extra_totals);
+        extra_parents = stored(extra_parents);
+        extra_siblings = stored(extra_siblings);
+        extra_rivals = stored(extra_rivals);
+    }
+
     state labeled{ label<link_t>() };
     std_array<link_t, 1> extra_cells{ { absent } };
     std_array<link_t, 1> extra_children{ { none } };
@@ -383,6 +462,17 @@ struct rival_candidate
 // The full scenario with a candidate (row 5, input 6) spending confirmed Z:0.
 struct lone_candidate
 {
+    lone_candidate() NOEXCEPT
+    {
+        extra_cells = stored(extra_cells);
+        extra_children = stored(extra_children);
+        extra_edges = stored(extra_edges);
+        extra_totals = stored(extra_totals);
+        extra_parents = stored(extra_parents);
+        extra_siblings = stored(extra_siblings);
+        extra_rivals = stored(extra_rivals);
+    }
+
     state labeled{ label<link_t>() };
     std_array<link_t, 1> extra_cells{ { absent } };
     std_array<link_t, 1> extra_children{ { none } };
@@ -440,7 +530,7 @@ BC_AUTO_TEST_CASE(pool_algorithm__fee_rate__size_sigops_or_empty__per_chargeable
 BC_AUTO_TEST_CASE(pool_algorithm__gather__integral__expected)
 {
     const std_array<link_t, 6> values{ { 10, 11, 12, 13, 14, 15 } };
-    const std_array<link_t, 5> indexes{ { 5, 3, none, 0, 4 } };
+    const auto indexes = stored(std_array<link_t, 5>{ { 5, 3, none, 0, 4 } });
     std_array<link_t, 5> out{};
     accessor::gather<link_t>(out, values, indexes);
     BC_REQUIRE_EQUAL(out[0], 15u);
@@ -464,39 +554,39 @@ BC_AUTO_TEST_CASE(pool_algorithm__initialize__columns__contested_labeled)
 {
     state out{};
     accessor::initialize(out.columns());
-    BC_REQUIRE_EQUAL(out.cells[0], 0u);
-    BC_REQUIRE_EQUAL(out.cells[1], 1u);
-    BC_REQUIRE_EQUAL(out.cells[2], 2u);
-    BC_REQUIRE_EQUAL(out.cells[3], unlabeled);
-    BC_REQUIRE_EQUAL(out.cells[4], unlabeled);
+    BC_REQUIRE_EQUAL(cell(out.cells, 0), 0u);
+    BC_REQUIRE_EQUAL(cell(out.cells, 1), 1u);
+    BC_REQUIRE_EQUAL(cell(out.cells, 2), 2u);
+    BC_REQUIRE_EQUAL(cell(out.cells, 3), unlabeled);
+    BC_REQUIRE_EQUAL(cell(out.cells, 4), unlabeled);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__propagate__connected__one_label)
 {
     const auto labeled = label<link_t>();
-    BC_REQUIRE_EQUAL(labeled.cells[0], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[1], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[2], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[3], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[4], 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), 0u);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__propagate__absent_row__nothing_contested)
 {
     const auto out = label_without_a();
-    BC_REQUIRE_EQUAL(out.cells[0], unlabeled);
-    BC_REQUIRE_EQUAL(out.cells[1], absent);
-    BC_REQUIRE_EQUAL(out.cells[2], unlabeled);
-    BC_REQUIRE_EQUAL(out.cells[3], unlabeled);
-    BC_REQUIRE_EQUAL(out.cells[4], unlabeled);
+    BC_REQUIRE_EQUAL(cell(out.cells, 0), unlabeled);
+    BC_REQUIRE_EQUAL(cell(out.cells, 1), absent);
+    BC_REQUIRE_EQUAL(cell(out.cells, 2), unlabeled);
+    BC_REQUIRE_EQUAL(cell(out.cells, 3), unlabeled);
+    BC_REQUIRE_EQUAL(cell(out.cells, 4), unlabeled);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__propagate__uncontested_ancestor__not_labeled)
 {
     const auto out = label_chain();
-    BC_REQUIRE_EQUAL(out.cells[0], unlabeled);
-    BC_REQUIRE_EQUAL(out.cells[1], 1u);
-    BC_REQUIRE_EQUAL(out.cells[2], 1u);
+    BC_REQUIRE_EQUAL(cell(out.cells, 0), unlabeled);
+    BC_REQUIRE_EQUAL(cell(out.cells, 1), 1u);
+    BC_REQUIRE_EQUAL(cell(out.cells, 2), 1u);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__propagate__extended__same_as_integral)
@@ -526,7 +616,7 @@ BC_AUTO_TEST_CASE(pool_algorithm__collect__frontier__all_rows_sorted)
 BC_AUTO_TEST_CASE(pool_algorithm__collect__frontier_absent_rival__excluded)
 {
     auto labeled = label<link_t>();
-    labeled.cells[2] = absent;
+    labeled.cells[2] = accessor::to_column(absent);
     const graph_t graph{ labeled.columns() };
     component_t out{};
     BC_REQUIRE(accessor::collect(out, graph, 4));
@@ -564,7 +654,7 @@ BC_AUTO_TEST_CASE(pool_algorithm__collect__columns_too_many__false)
 
 BC_AUTO_TEST_CASE(pool_algorithm__find__repeated_value__all_indexes)
 {
-    const std_array<link_t, 9> values{ { 3, 0, 3, 1, 3, 2, 3, 3, 0 } };
+    const auto values = stored(std_array<link_t, 9>{ { 3, 0, 3, 1, 3, 2, 3, 3, 0 } });
     std::vector<link_t> out{};
     accessor::find<link_t>(out, values, 3);
     BC_REQUIRE_EQUAL(out.size(), 5u);
@@ -652,7 +742,7 @@ BC_AUTO_TEST_CASE(pool_algorithm__initialize__candidate_child__collected)
     const auto collected_candidate = accessor::collect(from_candidate, graph, 4);
     const auto collected_table = accessor::collect(from_table, graph, 2);
     const auto related = accessor::relate(from_table, graph);
-    BC_REQUIRE_EQUAL(scenario.extra_cells[0], 4u);
+    BC_REQUIRE_EQUAL(cell(scenario.extra_cells, 0), 4u);
     BC_REQUIRE(collected_candidate);
     BC_REQUIRE_EQUAL(from_candidate.count, rows);
     BC_REQUIRE_EQUAL(from_candidate.rows[4], 4u);
@@ -672,7 +762,7 @@ BC_AUTO_TEST_CASE(pool_algorithm__initialize__candidate_rival__clique_of_three)
     const auto collected = accessor::collect(out, graph, 5);
     const auto related = accessor::relate(out, graph);
     const auto collected_table = accessor::collect(from_table, graph, 1);
-    BC_REQUIRE_EQUAL(scenario.extra_cells[0], 5u);
+    BC_REQUIRE_EQUAL(cell(scenario.extra_cells, 0), 5u);
     BC_REQUIRE(collected);
     BC_REQUIRE_EQUAL(out.count, 6u);
     BC_REQUIRE(related);
@@ -689,7 +779,7 @@ BC_AUTO_TEST_CASE(pool_algorithm__initialize__uncontested_candidate__unlabeled)
     lone_candidate scenario{};
     const auto graph = scenario.graph();
     accessor::initialize(graph, scenario.candidates);
-    BC_REQUIRE_EQUAL(scenario.extra_cells[0], unlabeled);
+    BC_REQUIRE_EQUAL(cell(scenario.extra_cells, 0), unlabeled);
 }
 
 // outcomes
@@ -800,7 +890,7 @@ BC_AUTO_TEST_CASE(pool_algorithm__resolve__no_outcomes__component_excluded)
 BC_AUTO_TEST_CASE(pool_algorithm__resolve__boundary_row__excluded)
 {
     line_state line{};
-    line.cells[0] = boundary;
+    line.cells[0] = accessor::to_column(boundary);
     std_array<mark, 3> marks{};
     accessor::resolve<link_t>(marks, line.columns(), 1'024);
     BC_REQUIRE(marks[0] == mark::excluded);
@@ -1032,41 +1122,41 @@ BC_AUTO_TEST_CASE(pool_algorithm__exclude__row__descendants_absent)
 {
     auto labeled = label<link_t>();
     accessor::exclude(labeled.columns(), 1);
-    BC_REQUIRE_EQUAL(labeled.cells[0], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[1], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[2], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[3], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[4], 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), 0u);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__admit__contested_row__labeled_into_component)
 {
     auto labeled = label<link_t>();
-    labeled.cells = { { 0, 0, 0, 0, absent } };
+    labeled.cells = stored(std_array<link_t, rows>{ { 0, 0, 0, 0, absent } });
     accessor::admit(labeled.columns(), 4);
-    BC_REQUIRE_EQUAL(labeled.cells[4], 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), 0u);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__confirm__q__rivals_excluded_rest_unlabeled)
 {
     auto labeled = label<link_t>();
     accessor::confirm(labeled.columns(), 0);
-    BC_REQUIRE_EQUAL(labeled.cells[0], boundary);
-    BC_REQUIRE_EQUAL(labeled.cells[1], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[2], unlabeled);
-    BC_REQUIRE_EQUAL(labeled.cells[3], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[4], unlabeled);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), boundary);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), unlabeled);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), unlabeled);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__confirm__b__q_loses_rival_unlabeled)
 {
     auto labeled = label<link_t>();
     accessor::confirm(labeled.columns(), 2);
-    BC_REQUIRE_EQUAL(labeled.cells[0], unlabeled);
-    BC_REQUIRE_EQUAL(labeled.cells[1], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[2], boundary);
-    BC_REQUIRE_EQUAL(labeled.cells[3], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[4], unlabeled);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), unlabeled);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), boundary);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), unlabeled);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__unconfirm__q__component_restored)
@@ -1074,11 +1164,11 @@ BC_AUTO_TEST_CASE(pool_algorithm__unconfirm__q__component_restored)
     auto labeled = label<link_t>();
     accessor::confirm(labeled.columns(), 0);
     accessor::unconfirm(labeled.columns(), 0);
-    BC_REQUIRE_EQUAL(labeled.cells[0], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[1], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[2], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[3], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[4], 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), 0u);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__unconfirm__other_boundary__rival_stays_absent)
@@ -1087,11 +1177,11 @@ BC_AUTO_TEST_CASE(pool_algorithm__unconfirm__other_boundary__rival_stays_absent)
     accessor::confirm(labeled.columns(), 2);
     accessor::confirm(labeled.columns(), 0);
     accessor::unconfirm(labeled.columns(), 0);
-    BC_REQUIRE_EQUAL(labeled.cells[0], unlabeled);
-    BC_REQUIRE_EQUAL(labeled.cells[1], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[2], boundary);
-    BC_REQUIRE_EQUAL(labeled.cells[3], absent);
-    BC_REQUIRE_EQUAL(labeled.cells[4], unlabeled);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), unlabeled);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), boundary);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), absent);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), unlabeled);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__revive__absent_chain__relabeled)
@@ -1099,33 +1189,33 @@ BC_AUTO_TEST_CASE(pool_algorithm__revive__absent_chain__relabeled)
     auto labeled = label<link_t>();
     accessor::exclude(labeled.columns(), 1);
     accessor::revive(labeled.columns(), 1);
-    BC_REQUIRE_EQUAL(labeled.cells[0], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[1], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[2], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[3], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[4], 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), 0u);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__revive__present__unchanged)
 {
     auto labeled = label<link_t>();
     accessor::revive(labeled.columns(), 1);
-    BC_REQUIRE_EQUAL(labeled.cells[1], 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), 0u);
 }
 
 BC_AUTO_TEST_CASE(pool_algorithm__relabel__component__lowest_row)
 {
     auto labeled = label<link_t>();
-    labeled.cells = { { 0, 1, 2, 3, 4 } };
+    labeled.cells = stored(std_array<link_t, rows>{ { 0, 1, 2, 3, 4 } });
     component_t out{};
     out.count = 3;
     out.rows = { { 2, 3, 4 } };
     accessor::relabel(labeled.columns(), out);
-    BC_REQUIRE_EQUAL(labeled.cells[0], 0u);
-    BC_REQUIRE_EQUAL(labeled.cells[1], 1u);
-    BC_REQUIRE_EQUAL(labeled.cells[2], 2u);
-    BC_REQUIRE_EQUAL(labeled.cells[3], 2u);
-    BC_REQUIRE_EQUAL(labeled.cells[4], 2u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 0), 0u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 1), 1u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 2), 2u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 3), 2u);
+    BC_REQUIRE_EQUAL(cell(labeled.cells, 4), 2u);
 }
 
 BC_AUTO_TEST_SUITE_END()

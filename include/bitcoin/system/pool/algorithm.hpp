@@ -185,6 +185,19 @@ public:
     static constexpr uint64_t fee_rate(const totals_t& totals,
         uint32_t bytes_per_sigop) NOEXCEPT;
 
+    /// Column values (stored little-endian).
+    /// -----------------------------------------------------------------------
+
+    /// The value as stored in a column.
+    static constexpr link_t to_column(link_t value) NOEXCEPT;
+    static constexpr edges_t to_column(const edges_t& value) NOEXCEPT;
+    static constexpr totals_t to_column(const totals_t& value) NOEXCEPT;
+
+    /// The value as read from a column.
+    static constexpr link_t from_column(link_t value) NOEXCEPT;
+    static constexpr edges_t from_column(const edges_t& value) NOEXCEPT;
+    static constexpr totals_t from_column(const totals_t& value) NOEXCEPT;
+
     /// Candidates.
     /// -----------------------------------------------------------------------
 
@@ -316,10 +329,11 @@ protected:
 
     /// Graph navigation over table and candidate columns.
     static constexpr size_t rows(const graph_t& graph) NOEXCEPT;
-    static constexpr link_t& cell(const graph_t& graph, link_t row) NOEXCEPT;
+    static constexpr link_t cell(const graph_t& graph, link_t row) NOEXCEPT;
+    static constexpr void set_cell(const graph_t& graph, link_t row,
+        link_t value) NOEXCEPT;
     static constexpr edges_t edges(const graph_t& graph, link_t row) NOEXCEPT;
-    static constexpr const totals_t& totals(const graph_t& graph,
-        link_t row) NOEXCEPT;
+    static constexpr totals_t totals(const graph_t& graph, link_t row) NOEXCEPT;
     static constexpr link_t child(const graph_t& graph, link_t row) NOEXCEPT;
     static constexpr link_t parent(const graph_t& graph, link_t input) NOEXCEPT;
 
