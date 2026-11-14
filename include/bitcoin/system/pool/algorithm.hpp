@@ -125,6 +125,24 @@ public:
         taken
     };
 
+    /// Rate and chargeable size of a chunk.
+    struct take_t
+    {
+        uint64_t rate{};
+        uint64_t size{};
+    };
+
+    /// The chunks taken by a block.
+    using takes_t = std::vector<take_t>;
+
+    /// Blocks taken in turn from the rows, and the marks that continue them.
+    struct projection_t
+    {
+        std::vector<mark> marks{};
+        std::vector<takes_t> blocks{};
+        bool exhausted{};
+    };
+
     /// Lane counts of a word.
     template <typename Word>
     static constexpr auto link_lanes = capacity<Word, link_t>;
@@ -161,6 +179,10 @@ public:
 
     /// Chargeable size of a row (virtual size or sigops at bytes per sigop).
     static constexpr uint64_t chargeable(const totals_t& totals,
+        uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// Fee rate of a row (satoshis per chargeable kilobyte).
+    static constexpr uint64_t fee_rate(const totals_t& totals,
         uint32_t bytes_per_sigop) NOEXCEPT;
 
     /// Candidates.
@@ -243,6 +265,23 @@ public:
     static void pack(std::vector<link_t>& out, std::span<mark> marks,
         const columns_t& columns, const totals_t& budget, size_t depth,
         uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// The next block of the projection taken by chunk rate, as its rows.
+    static void project(std::vector<link_t>& out, projection_t& projection,
+        const columns_t& columns, const totals_t& budget, size_t depth,
+        uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// Estimate (projected blocks).
+    /// -----------------------------------------------------------------------
+
+    /// Chargeable size of the takes at or above the rate.
+    static constexpr uint64_t above(const std::span<const take_t>& takes,
+        uint64_t rate) NOEXCEPT;
+
+    /// Lowest rate taken within the count of blocks, max_uint64 if none.
+    template <typename Arrivals>
+    static uint64_t estimate(const projection_t& projection, size_t count,
+        uint64_t space, const Arrivals& arrivals) NOEXCEPT;
 
     /// Columns (whole table).
     /// -----------------------------------------------------------------------
@@ -330,6 +369,17 @@ protected:
     /// The component of the row and its descendants marked excluded.
     static void forfeit(std::span<mark> marks, const graph_t& graph,
         link_t row) NOEXCEPT;
+
+    /// As pack, with the rate and chargeable size of each chunk taken.
+    static void pack_(std::vector<link_t>& out, takes_t& takes,
+        std::span<mark> marks, const columns_t& columns,
+        const totals_t& budget, size_t depth,
+        uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// The rate is taken within the count of blocks.
+    template <typename Arrivals>
+    static bool reaches(const projection_t& projection, size_t count,
+        uint64_t space, uint64_t rate, const Arrivals& arrivals) NOEXCEPT;
 
     /// The rows and totals of the chunk of the row, false if none fits.
     static bool chunk(std::vector<link_t>& out, totals_t& sum,

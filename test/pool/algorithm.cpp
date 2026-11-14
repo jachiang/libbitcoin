@@ -38,6 +38,8 @@ using columns_t = accessor::columns_t;
 using graph_t = accessor::graph_t;
 using component_t = accessor::component_t;
 using mark = accessor::mark;
+using take_t = accessor::take_t;
+using projection_t = accessor::projection_t;
 constexpr auto none = accessor::none;
 constexpr auto absent = accessor::absent;
 constexpr auto boundary = accessor::boundary;
@@ -281,6 +283,35 @@ static std::vector<link_t> template_of(uint32_t size) NOEXCEPT
     return out;
 }
 
+// The line scenario projected by the count of blocks, of two rows each.
+static projection_t projection_of(size_t count) NOEXCEPT
+{
+    line_state line{};
+    projection_t out{};
+    std::vector<link_t> rows{};
+    out.marks.resize(3);
+    for (size_t block{}; block < count; ++block)
+        accessor::project(rows, out, line.columns(), { 0, 200, 100 }, 2, 20);
+
+    return out;
+}
+
+// No arrivals, and 200 bytes per block at each rate up to 50, or up to 500.
+static uint64_t no_arrivals(uint64_t) NOEXCEPT
+{
+    return 0;
+}
+
+static uint64_t low_arrivals(uint64_t rate) NOEXCEPT
+{
+    return rate > 50 ? 0 : 200;
+}
+
+static uint64_t high_arrivals(uint64_t rate) NOEXCEPT
+{
+    return rate > 500 ? 0 : 200;
+}
+
 // A table of the scenario less P, with P as the candidate (row 4, input 5
 // spending Q:0), bridged from Q.
 struct child_candidate
@@ -394,6 +425,13 @@ BC_AUTO_TEST_CASE(pool_algorithm__chargeable__size_or_sigops__maximum)
 {
     BC_REQUIRE_EQUAL(accessor::chargeable({ 0, 100, 1 }, 20), 100u);
     BC_REQUIRE_EQUAL(accessor::chargeable({ 0, 100, 6 }, 20), 120u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__fee_rate__size_sigops_or_empty__per_chargeable_kilobyte)
+{
+    BC_REQUIRE_EQUAL(accessor::fee_rate({ 1'000, 100, 1 }, 20), 10'000u);
+    BC_REQUIRE_EQUAL(accessor::fee_rate({ 1'000, 100, 10 }, 20), 5'000u);
+    BC_REQUIRE_EQUAL(accessor::fee_rate({ 1'000, 0, 0 }, 20), 1'000'000u);
 }
 
 // gather
@@ -862,6 +900,129 @@ BC_AUTO_TEST_CASE(pool_algorithm__pack__empty_budget__empty)
     std::vector<link_t> out{};
     accessor::pack(out, marks, line.columns(), {}, 2, 20);
     BC_REQUIRE(out.empty());
+}
+
+// project
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(pool_algorithm__project__first_block__full_not_exhausted)
+{
+    const auto out = projection_of(1);
+    BC_REQUIRE_EQUAL(out.blocks.size(), 1u);
+    BC_REQUIRE_EQUAL(out.blocks[0].size(), 2u);
+    BC_REQUIRE_EQUAL(out.blocks[0][0].rate, 100u);
+    BC_REQUIRE_EQUAL(out.blocks[0][0].size, 100u);
+    BC_REQUIRE_EQUAL(out.blocks[0][1].rate, 100u);
+    BC_REQUIRE_EQUAL(out.blocks[0][1].size, 100u);
+    BC_REQUIRE(!out.exhausted);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__project__second_block__remainder_exhausted)
+{
+    const auto out = projection_of(2);
+    BC_REQUIRE_EQUAL(out.blocks.size(), 2u);
+    BC_REQUIRE_EQUAL(out.blocks[1].size(), 1u);
+    BC_REQUIRE_EQUAL(out.blocks[1][0].rate, 4'000u);
+    BC_REQUIRE_EQUAL(out.blocks[1][0].size, 100u);
+    BC_REQUIRE(out.exhausted);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__project__exhausted__no_block)
+{
+    const auto out = projection_of(3);
+    BC_REQUIRE_EQUAL(out.blocks.size(), 2u);
+    BC_REQUIRE(out.exhausted);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__project__second_block__rows_of_block)
+{
+    line_state line{};
+    projection_t out{};
+    std::vector<link_t> rows{};
+    out.marks.resize(3);
+    accessor::project(rows, out, line.columns(), { 0, 200, 100 }, 2, 20);
+    accessor::project(rows, out, line.columns(), { 0, 200, 100 }, 2, 20);
+    BC_REQUIRE_EQUAL(rows.size(), 1u);
+    BC_REQUIRE_EQUAL(rows[0], 2u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__project__unfit_row__exhausted)
+{
+    line_state line{};
+    projection_t out{};
+    std::vector<link_t> rows{};
+    out.marks.resize(3);
+    accessor::project(rows, out, line.columns(), { 0, 50, 100 }, 2, 20);
+    BC_REQUIRE(rows.empty());
+    BC_REQUIRE(out.blocks.empty());
+    BC_REQUIRE(out.exhausted);
+}
+
+// estimate
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(pool_algorithm__above__rates__sizes_at_or_above)
+{
+    const std_array<take_t, 3> takes{ { { 300, 10 }, { 200, 20 }, { 100, 30 } } };
+    BC_REQUIRE_EQUAL(accessor::above(takes, 0), 60u);
+    BC_REQUIRE_EQUAL(accessor::above(takes, 200), 30u);
+    BC_REQUIRE_EQUAL(accessor::above(takes, 301), 0u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__empty_pool__zero)
+{
+    projection_t projection{};
+    projection.exhausted = true;
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 1, 200, no_arrivals), 0u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__full_block__above_lowest_take)
+{
+    const auto projection = projection_of(2);
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 1, 200, no_arrivals), 101u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__full_last_block__above_lowest_take)
+{
+    const auto projection = projection_of(1);
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 1, 200, no_arrivals), 101u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__open_block__zero)
+{
+    const auto projection = projection_of(2);
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 2, 200, no_arrivals), 0u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__beyond_blocks__zero)
+{
+    const auto projection = projection_of(2);
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 3, 200, no_arrivals), 0u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__low_arrivals_fill_open_block__above_arrivals)
+{
+    const auto projection = projection_of(2);
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 2, 200, low_arrivals), 51u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__high_arrivals_fill_open_block__above_first_block)
+{
+    const auto projection = projection_of(2);
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 2, 200, high_arrivals), 101u);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__no_space__maximum)
+{
+    projection_t projection{};
+    projection.exhausted = true;
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 1, 0, no_arrivals), max_uint64);
+}
+
+BC_AUTO_TEST_CASE(pool_algorithm__estimate__no_blocks__maximum)
+{
+    const auto projection = projection_of(2);
+    BC_REQUIRE_EQUAL(accessor::estimate(projection, 0, 200, no_arrivals), max_uint64);
 }
 
 // transitions

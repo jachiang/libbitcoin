@@ -60,6 +60,13 @@ constexpr uint64_t algorithm::chargeable(const totals_t& totals,
     return greater(totals.size, cost);
 }
 
+constexpr uint64_t algorithm::fee_rate(const totals_t& totals,
+    uint32_t bytes_per_sigop) NOEXCEPT
+{
+    const auto size = greater(chargeable(totals, bytes_per_sigop), one);
+    return ceilinged_multiply(totals.fee, 1'000_u64) / size;
+}
+
 // Candidates.
 // ----------------------------------------------------------------------------
 
@@ -467,81 +474,58 @@ inline void algorithm::pack(std::vector<link_t>& out, std::span<mark> marks,
     const columns_t& columns, const totals_t& budget, size_t depth,
     uint32_t bytes_per_sigop) NOEXCEPT
 {
-    struct score_t
+    takes_t takes{};
+    pack_(out, takes, marks, columns, budget, depth, bytes_per_sigop);
+}
+
+inline void algorithm::project(std::vector<link_t>& out,
+    projection_t& projection, const columns_t& columns,
+    const totals_t& budget, size_t depth, uint32_t bytes_per_sigop) NOEXCEPT
+{
+    takes_t takes{};
+    auto& marks = projection.marks;
+    pack_(out, takes, marks, columns, budget, depth, bytes_per_sigop);
+
+    const auto left = std::ranges::find(marks, mark::unmarked) != marks.end();
+    projection.exhausted = takes.empty() || !left;
+    if (!takes.empty())
+        projection.blocks.push_back(std::move(takes));
+}
+
+// Estimate (projected blocks).
+// ----------------------------------------------------------------------------
+
+constexpr uint64_t algorithm::above(const std::span<const take_t>& takes,
+    uint64_t rate) NOEXCEPT
+{
+    uint64_t size{};
+    for (const auto& take: takes)
+        if (take.rate >= rate)
+            size = ceilinged_add(size, take.size);
+
+    return size;
+}
+
+template <typename Arrivals>
+inline uint64_t algorithm::estimate(const projection_t& projection,
+    size_t count, uint64_t space, const Arrivals& arrivals) NOEXCEPT
+{
+    uint64_t low{};
+    auto high = max_uint64;
+    if (!reaches(projection, count, space, high, arrivals))
+        return high;
+
+    // A rate that is taken implies that each higher rate is taken.
+    while (low < high)
     {
-        link_t row{};
-        uint64_t rate{};
-        uint64_t fee{};
-        size_t count{};
-    };
-
-    const graph_t graph{ columns };
-    const auto count = columns.cells.size();
-    std::vector<score_t> scores{};
-    std::vector<link_t> rows{};
-    totals_t used{};
-
-    const auto available = [&]() NOEXCEPT -> totals_t
-    {
-        return
-        {
-            {},
-            floored_subtract(budget.size, used.size),
-            floored_subtract(budget.sigops, used.sigops)
-        };
-    };
-
-    // Compared in satoshis per virtual kilobyte.
-    const auto rate = [&](const totals_t& sum) NOEXCEPT
-    {
-        const auto size = greater(chargeable(sum, bytes_per_sigop), one);
-        return ceilinged_multiply(sum.fee, 1'000_u64) / size;
-    };
-
-    for (auto taken = true; taken;)
-    {
-        taken = false;
-        scores.clear();
-        for (size_t at{}; at < count; ++at)
-        {
-            totals_t sum{};
-            const auto row = possible_narrow_cast<link_t>(at);
-            if (marks[row] == mark::unmarked &&
-                chunk(rows, sum, marks, graph, row, depth, available()))
-                scores.push_back({ row, rate(sum), sum.fee, rows.size() });
-        }
-
-        std::sort(scores.begin(), scores.end(),
-            [](const score_t& left, const score_t& right) NOEXCEPT
-            {
-                return left.rate == right.rate ? left.row < right.row :
-                    left.rate > right.rate;
-            });
-
-        for (const auto& score: scores)
-        {
-            totals_t sum{};
-            const auto space = available();
-            if (marks[score.row] != mark::unmarked ||
-                !chunk(rows, sum, marks, graph, score.row, depth, space) ||
-                rows.size() != score.count ||
-                sum.fee != score.fee)
-                continue;
-
-            for (const auto row: rows)
-                marks[row] = mark::taken;
-
-            used.fee = ceilinged_add(used.fee, sum.fee);
-            used.size = ceilinged_add(used.size, sum.size);
-            used.sigops = ceilinged_add(used.sigops, sum.sigops);
-            taken = true;
-        }
+        const auto middle = low + to_half(high - low);
+        if (reaches(projection, count, space, middle, arrivals))
+            high = middle;
+        else
+            low = add1(middle);
     }
 
-    out.clear();
-    for (size_t at{}; at < count; ++at)
-        if (marks[at] == mark::taken)
-            out.push_back(possible_narrow_cast<link_t>(at));
+    return low;
 }
 
 // Columns (whole table).
@@ -921,6 +905,113 @@ inline void algorithm::forfeit(std::span<mark> marks, const graph_t& graph,
 
     for (const auto member: found)
         discard(marks, graph, member);
+}
+
+inline void algorithm::pack_(std::vector<link_t>& out, takes_t& takes,
+    std::span<mark> marks, const columns_t& columns, const totals_t& budget,
+    size_t depth, uint32_t bytes_per_sigop) NOEXCEPT
+{
+    struct score_t
+    {
+        link_t row{};
+        uint64_t rate{};
+        uint64_t fee{};
+        size_t count{};
+    };
+
+    const graph_t graph{ columns };
+    const auto count = columns.cells.size();
+    std::vector<score_t> scores{};
+    std::vector<link_t> rows{};
+    totals_t used{};
+    out.clear();
+    takes.clear();
+
+    const auto available = [&]() NOEXCEPT -> totals_t
+    {
+        return
+        {
+            {},
+            floored_subtract(budget.size, used.size),
+            floored_subtract(budget.sigops, used.sigops)
+        };
+    };
+
+    for (auto taken = true; taken;)
+    {
+        taken = false;
+        scores.clear();
+        for (size_t at{}; at < count; ++at)
+        {
+            totals_t sum{};
+            const auto row = possible_narrow_cast<link_t>(at);
+            if (marks[row] == mark::unmarked &&
+                chunk(rows, sum, marks, graph, row, depth, available()))
+            {
+                const auto rate = fee_rate(sum, bytes_per_sigop);
+                scores.push_back({ row, rate, sum.fee, rows.size() });
+            }
+        }
+
+        std::sort(scores.begin(), scores.end(),
+            [](const score_t& left, const score_t& right) NOEXCEPT
+            {
+                return left.rate == right.rate ? left.row < right.row :
+                    left.rate > right.rate;
+            });
+
+        for (const auto& score: scores)
+        {
+            totals_t sum{};
+            const auto space = available();
+            if (marks[score.row] != mark::unmarked ||
+                !chunk(rows, sum, marks, graph, score.row, depth, space) ||
+                rows.size() != score.count ||
+                sum.fee != score.fee)
+                continue;
+
+            for (const auto row: rows)
+                marks[row] = mark::taken;
+
+            out.insert(out.end(), rows.begin(), rows.end());
+            takes.push_back({ score.rate, chargeable(sum, bytes_per_sigop) });
+            used.fee = ceilinged_add(used.fee, sum.fee);
+            used.size = ceilinged_add(used.size, sum.size);
+            used.sigops = ceilinged_add(used.sigops, sum.sigops);
+            taken = true;
+        }
+    }
+
+    std::sort(out.begin(), out.end());
+}
+
+template <typename Arrivals>
+inline bool algorithm::reaches(const projection_t& projection, size_t count,
+    uint64_t space, uint64_t rate, const Arrivals& arrivals) NOEXCEPT
+{
+    const auto& blocks = projection.blocks;
+    const auto arriving = arrivals(rate);
+    uint64_t carry{};
+
+    // A block that leaves rows is full, so its takes are its capacity.
+    for (size_t block{}; block < count; ++block)
+    {
+        std::span<const take_t> takes{};
+        if (block < blocks.size())
+            takes = blocks[block];
+
+        const auto last = add1(block) >= blocks.size();
+        const auto full = !takes.empty() && !(last && projection.exhausted);
+        const auto capacity = full ? above(takes, zero) : space;
+        const auto demand = ceilinged_add(carry, above(takes, rate));
+        if (demand < capacity)
+            return true;
+
+        const auto excess = floored_subtract(demand, capacity);
+        carry = ceilinged_add(excess, arriving);
+    }
+
+    return false;
 }
 
 inline bool algorithm::chunk(std::vector<link_t>& out, totals_t& sum,
