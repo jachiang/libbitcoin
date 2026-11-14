@@ -29,20 +29,7 @@ namespace libbitcoin {
 namespace system {
 namespace pool {
 
-/// Conflict components and outcomes of pooled transactions, over the columns
-/// of the pool. Rows are pool links and inputs are spends links, each column
-/// aligned with its index. A cell holds the state and component label of a
-/// row. Rows are related by parent rows (an input to the row it spends),
-/// children (a list through the inputs spending a row) and rivals (a ring
-/// through the inputs spending a point).
-///
-/// A row is relevant if it is in a clique (two or more present rivals of a
-/// point) or has a relevant parent. Only relevant rows are labeled, so an
-/// uncontested row of any ancestry is in no component.
-///
-/// Frontier operations walk from a row and touch only its component and
-/// ancestry. Column operations pass over every row. Lane operations take full
-/// words at each available width from Word down, then one element at a time.
+/// Conflict components, outcomes and templates over the pool columns.
 class algorithm
 {
 public:
@@ -77,9 +64,7 @@ public:
         link_t to{};
     };
 
-    /// Rows of a component, the ancestors of each member (transitive within
-    /// the component) and the members spending each contested point, each as
-    /// a mask over the member indexes.
+    /// Rows of a component, with ancestor and clique masks over its members.
     struct component_t
     {
         std_array<link_t, bits<mask_t>> rows{};
@@ -114,9 +99,7 @@ public:
         std::span<const link_t> rivals{};
     };
 
-    /// The table columns with candidate columns appended, as rows and inputs
-    /// numbered from the table counts, and the edges from the table into the
-    /// candidates that the table columns cannot hold.
+    /// The table columns with candidate columns and bridging edges appended.
     struct graph_t
     {
         columns_t table{};
@@ -140,6 +123,24 @@ public:
 
         /// In the template.
         taken
+    };
+
+    /// Rate and chargeable size of a chunk.
+    struct take_t
+    {
+        uint64_t rate{};
+        uint64_t size{};
+    };
+
+    /// The chunks taken by a block.
+    using takes_t = std::vector<take_t>;
+
+    /// Blocks taken in turn from the rows, and the marks that continue them.
+    struct projection_t
+    {
+        std::vector<mark> marks{};
+        std::vector<takes_t> blocks{};
+        bool exhausted{};
     };
 
     /// Lane counts of a word.
@@ -180,24 +181,38 @@ public:
     static constexpr uint64_t chargeable(const totals_t& totals,
         uint32_t bytes_per_sigop) NOEXCEPT;
 
+    /// Fee rate of a row (satoshis per chargeable kilobyte).
+    static constexpr uint64_t fee_rate(const totals_t& totals,
+        uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// Column values (stored little-endian).
+    /// -----------------------------------------------------------------------
+
+    /// The value as stored in a column.
+    static constexpr link_t to_column(link_t value) NOEXCEPT;
+    static constexpr edges_t to_column(const edges_t& value) NOEXCEPT;
+    static constexpr totals_t to_column(const totals_t& value) NOEXCEPT;
+
+    /// The value as read from a column.
+    static constexpr link_t from_column(link_t value) NOEXCEPT;
+    static constexpr edges_t from_column(const edges_t& value) NOEXCEPT;
+    static constexpr totals_t from_column(const totals_t& value) NOEXCEPT;
+
     /// Candidates.
     /// -----------------------------------------------------------------------
 
-    /// Each candidate cell set present, labeled by its own index if relevant,
-    /// in candidate order (parents precede children).
+    /// Each candidate cell set present, labeled by its own index if relevant.
     static constexpr void initialize(const graph_t& graph,
         const std::span<const link_t>& candidates) NOEXCEPT;
 
     /// Components (frontier).
     /// -----------------------------------------------------------------------
 
-    /// The component of the row, by walking its relevant parents, present
-    /// children and present rivals, false if more than maximum_members.
+    /// The component of the row, false if more than maximum_members.
     static constexpr bool collect(component_t& out, const graph_t& graph,
         link_t row) NOEXCEPT;
 
-    /// Ancestor and clique masks of the collected rows, false if more cliques
-    /// than maximum_members.
+    /// Ancestor and clique masks of the rows, false if over maximum_members.
     static constexpr bool relate(component_t& out,
         const graph_t& graph) NOEXCEPT;
 
@@ -205,8 +220,7 @@ public:
     static constexpr mask_t members(const component_t& component,
         const std::span<const link_t>& rows) NOEXCEPT;
 
-    /// Totals of the members and of their present ancestors outside the
-    /// component, false if over the limit in size or in sigops.
+    /// Totals of the members and outside ancestors, false if over the limit.
     static bool ancestry(totals_t& out, const graph_t& graph,
         const component_t& component, const totals_t& limit) NOEXCEPT;
 
@@ -216,20 +230,17 @@ public:
     /// Number of outcomes, the product of the clique sizes.
     static constexpr size_t outcomes(const component_t& component) NOEXCEPT;
 
-    /// The outcome at index: one winner per clique by mixed radix, the losers
-    /// and their descendants excluded, so conflict-free and ancestry-closed.
+    /// The outcome at index, one winner per clique by mixed radix.
     static constexpr mask_t outcome(const component_t& component,
         size_t index) NOEXCEPT;
 
-    /// Highest fee over the outcomes, and over those excluding every member
-    /// of the candidate mask.
+    /// Highest fee over the outcomes, and over those without the candidate.
     template <typename Word = xint512_t>
     static constexpr void evaluate(uint64_t& best, uint64_t& best_without,
         const std::span<const mask_t>& outcomes, mask_t candidate,
         const component_t& component, const graph_t& graph) NOEXCEPT;
 
-    /// The fee added by the candidate covers its bytes at the rate (satoshis
-    /// per virtual kilobyte).
+    /// The fee added by the candidate covers its bytes at the rate.
     static constexpr bool covered(uint64_t best, uint64_t best_without,
         uint64_t candidate_bytes, uint64_t rate) NOEXCEPT;
 
@@ -243,41 +254,47 @@ public:
     /// The row and its present descendants made absent.
     static void exclude(const columns_t& columns, link_t row) NOEXCEPT;
 
-    /// The row made present and labeled into its component (which may merge
-    /// components).
+    /// The row made present and labeled into its component.
     static void admit(const columns_t& columns, link_t row) NOEXCEPT;
 
-    /// The row made boundary, its present rivals excluded, and the rest of
-    /// its component relabeled (which may split it).
+    /// The row made boundary, its rivals excluded and the rest relabeled.
     static void confirm(const columns_t& columns, link_t row) NOEXCEPT;
 
-    /// The row made present, its confirmable rivals and their confirmable
-    /// descendants revived, and each relabeled into its component.
+    /// The row made present, its confirmable rivals revived and relabeled.
     static void unconfirm(const columns_t& columns, link_t row) NOEXCEPT;
 
-    /// The row made present if absent and confirmable, with its confirmable
-    /// descendants, and each relabeled into its component.
+    /// The row and its confirmable descendants made present and relabeled.
     static void revive(const columns_t& columns, link_t row) NOEXCEPT;
 
     /// Template (frontier, table columns).
     /// -----------------------------------------------------------------------
 
-    /// Each row marked excluded if not present, or if not in the outcome of
-    /// highest fee among the first maximum outcomes of its component, with
-    /// its descendants. A component of more than maximum_members members or
-    /// cliques is excluded whole.
+    /// Rows absent from the best outcome of their component marked excluded.
     template <typename Word = xint512_t>
     static void resolve(std::span<mark> marks, const columns_t& columns,
         size_t maximum_outcomes) NOEXCEPT;
 
-    /// The unmarked rows taken by chunk rate within the budget, in rounds
-    /// until none is taken, ascending (parents precede children). A chunk is
-    /// the untaken ancestry of a row within depth parent steps, cut to its
-    /// leading rows that fit, and its rate is fee over chargeable size. A
-    /// chunk changed by a take of its round is deferred to the next.
+    /// The unmarked rows taken by chunk rate within the budget, ascending.
     static void pack(std::vector<link_t>& out, std::span<mark> marks,
         const columns_t& columns, const totals_t& budget, size_t depth,
         uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// The next block of the projection taken by chunk rate, as its rows.
+    static void project(std::vector<link_t>& out, projection_t& projection,
+        const columns_t& columns, const totals_t& budget, size_t depth,
+        uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// Estimate (projected blocks).
+    /// -----------------------------------------------------------------------
+
+    /// Chargeable size of the takes at or above the rate.
+    static constexpr uint64_t above(const std::span<const take_t>& takes,
+        uint64_t rate) NOEXCEPT;
+
+    /// Lowest rate taken within the count of blocks, max_uint64 if none.
+    template <typename Arrivals>
+    static uint64_t estimate(const projection_t& projection, size_t count,
+        uint64_t space, const Arrivals& arrivals) NOEXCEPT;
 
     /// Columns (whole table).
     /// -----------------------------------------------------------------------
@@ -288,14 +305,10 @@ public:
         const std::span<const link_t>& values,
         const std::span<const link_t>& indexes) NOEXCEPT;
 
-    /// Each present cell labeled by its own index if in a clique, otherwise
-    /// unlabeled.
+    /// Each present cell labeled by its own index if in a clique.
     static constexpr void initialize(const columns_t& columns) NOEXCEPT;
 
-    /// One pass of each present row taking the minimum label over itself, its
-    /// relevant parents, its rivals and (if relevant) its children, true if
-    /// any cell changed. Repeated to a fixed point, labels identify
-    /// components. Scratch holds one link per input.
+    /// One pass of minimum label propagation, true if any cell changed.
     template <typename Word = xint512_t>
     static constexpr bool propagate(const columns_t& columns,
         std::span<link_t> scratch) NOEXCEPT;
@@ -316,10 +329,11 @@ protected:
 
     /// Graph navigation over table and candidate columns.
     static constexpr size_t rows(const graph_t& graph) NOEXCEPT;
-    static constexpr link_t& cell(const graph_t& graph, link_t row) NOEXCEPT;
+    static constexpr link_t cell(const graph_t& graph, link_t row) NOEXCEPT;
+    static constexpr void set_cell(const graph_t& graph, link_t row,
+        link_t value) NOEXCEPT;
     static constexpr edges_t edges(const graph_t& graph, link_t row) NOEXCEPT;
-    static constexpr const totals_t& totals(const graph_t& graph,
-        link_t row) NOEXCEPT;
+    static constexpr totals_t totals(const graph_t& graph, link_t row) NOEXCEPT;
     static constexpr link_t child(const graph_t& graph, link_t row) NOEXCEPT;
     static constexpr link_t parent(const graph_t& graph, link_t input) NOEXCEPT;
 
@@ -366,14 +380,22 @@ protected:
     static void discard(std::span<mark> marks, const graph_t& graph,
         link_t row) NOEXCEPT;
 
-    /// The component of the row (unbounded) and its descendants marked
-    /// excluded.
+    /// The component of the row and its descendants marked excluded.
     static void forfeit(std::span<mark> marks, const graph_t& graph,
         link_t row) NOEXCEPT;
 
-    /// The rows (ascending) and totals of the chunk of the row, false if its
-    /// untaken ancestry is deeper than depth, has an excluded row, or has no
-    /// leading row within the available totals.
+    /// As pack, with the rate and chargeable size of each chunk taken.
+    static void pack_(std::vector<link_t>& out, takes_t& takes,
+        std::span<mark> marks, const columns_t& columns,
+        const totals_t& budget, size_t depth,
+        uint32_t bytes_per_sigop) NOEXCEPT;
+
+    /// The rate is taken within the count of blocks.
+    template <typename Arrivals>
+    static bool reaches(const projection_t& projection, size_t count,
+        uint64_t space, uint64_t rate, const Arrivals& arrivals) NOEXCEPT;
+
+    /// The rows and totals of the chunk of the row, false if none fits.
     static bool chunk(std::vector<link_t>& out, totals_t& sum,
         const std::span<const mark>& marks, const graph_t& graph, link_t row,
         size_t depth, const totals_t& available) NOEXCEPT;
@@ -382,9 +404,7 @@ protected:
     static void restore(std::vector<link_t>& out, const columns_t& columns,
         link_t row) NOEXCEPT;
 
-    /// Each present row given its own label if relevant else unlabeled, then
-    /// collected and relabeled into its component (one over maximum_members
-    /// keeps its own labels).
+    /// Each present row labeled into its component.
     static void reform(const columns_t& columns,
         const std::span<const link_t>& rows) NOEXCEPT;
 
